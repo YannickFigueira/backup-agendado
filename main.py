@@ -1,8 +1,10 @@
 import argparse
+import platform
+import subprocess
 import tkinter as tk
-from tkinter import ttk, font
+from tkinter import ttk, font, messagebox
 
-from matplotlib.cbook import safe_first_element
+import verificarversao, configuracoes
 
 ## Variáveis principais
 version = "4.0.0"
@@ -39,11 +41,57 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
     sep_direita = ttk.Separator(container, orient="horizontal")
     sep_direita.grid(row=0, column=2, sticky="ew", padx=(10, 0))
 
+## Barra de Menus
+def barra_menu(janela):
+    # Criar barra de menu
+    barra_menu = tk.Menu(janela)
+    janela.config(menu=barra_menu)
+
+    def visitar_site():
+        pagina = f"https://github.com/YannickFigueira"
+        resposta = messagebox.askyesno("Sobre", f"Programa Igreja v{version}\n"
+                                                f"Deseja visitar a página\n"
+                                                f"Desenvolvedor YannickFigueira\n"
+                                                f"chronostimeinchain@gmail.com")
+        if resposta:
+            verificarversao.webbrowser.open(pagina)
+
+    def abrir_logs():
+        if platform.system() == "Windows":
+            arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
+            subprocess.run(["notepad", arquivo])
+        elif platform.system() == "Linux":
+            arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
+            subprocess.run(["xdg-open", arquivo])  # ou "gedit"
+        else:
+            print("Sistema não suportado")
+
+    # Manu Arquivo
+    menu_arquivo = tk.Menu(barra_menu, tearoff=0)
+    menu_arquivo.add_command(label="Configurações", command=lambda: configuracoes.config())
+    barra_menu.add_cascade(label="Arquivo", menu=menu_arquivo)
+    # Menu Ajuda
+    menu_ajuda = tk.Menu(barra_menu, tearoff=0)
+    menu_ajuda.add_command(label="Verificar atualização",
+                           command=lambda: verificarversao.consultar_lancamento(repo, version))
+    menu_ajuda.add_command(label="Notas da versão",
+                           command=lambda: abrir_logs())
+    menu_ajuda.add_command(label="Sobre",
+                           command=lambda: visitar_site())
+    barra_menu.add_cascade(label="Ajuda", menu=menu_ajuda)
+
+    # Menu Sair
+    barra_menu.add_command(label="Sair", command=janela.quit)
+
+## Inicio do Programa
 class BackupAgendado:
     def __init__(self, janela):
         ## Construção da janela
         self.janela = janela
         self.janela.title(f"Backup Agendado {version}")
+
+        ## Carregar Menus
+        barra_menu(janela)
 
         ## Painel da janela
         self.frame_controls = ttk.Frame(self.janela)
@@ -53,40 +101,53 @@ class BackupAgendado:
         self.frame_andamento.grid(row=0, column=1, sticky="nsew")
 
         ## Controles do painel esquerdo
+        linha_painel_esquerdo = 0
         self.lbl_selecao = ttk.Label(self.frame_controls, text="Selecionar Tarefa:", font=fonte)
-        self.lbl_selecao.grid(row=0, column=0, padx=espaco, pady=espaco, sticky="nsew")
+        self.lbl_selecao.grid(row=linha_painel_esquerdo, column=0, padx=espaco, pady=espaco, sticky="nsew")
 
         self.cmb_selecao = ttk.Combobox(self.frame_controls, font=fonte, state="readonly")
-        self.cmb_selecao.grid(row=0, column=1, padx=espaco, pady=espaco, sticky="nsew")
+        self.cmb_selecao.grid(row=linha_painel_esquerdo, column=1, padx=espaco, pady=espaco, sticky="nsew")
+        linha_painel_esquerdo += 1
 
         self.lbl_horario = ttk.Label(self.frame_controls, text="Horário:", font=fonte)
-        self.lbl_horario.grid(row=1, column=0, padx=espaco, pady=espaco, sticky="nsew")
+        self.lbl_horario.grid(row=linha_painel_esquerdo, column=0, padx=espaco, pady=espaco, sticky="nsew")
 
         self.lbl_hora_execucao = ttk.Label(self.frame_controls, text="--:--", font=fonte, anchor="center")
-        self.lbl_hora_execucao.grid(row=1, column=1, padx=espaco, pady=espaco, sticky="nsew")
+        self.lbl_hora_execucao.grid(row=linha_painel_esquerdo, column=1, padx=espaco, pady=espaco, sticky="nsew")
+        linha_painel_esquerdo += 1
 
         self.btn_executar = ttk.Button(self.frame_controls, text="Executar Tarefa", command="")
-        self.btn_executar.grid(row=2, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
+        self.btn_executar.grid(row=linha_painel_esquerdo, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
+        linha_painel_esquerdo += 1
 
         self.btn_cancelar = ttk.Button(self.frame_controls, text="Cancelar Tarefa", command="")
-        self.btn_cancelar.grid(row=3, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
+        self.btn_cancelar.grid(row=linha_painel_esquerdo, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
         self.btn_cancelar.config(state="disabled")
+        linha_painel_esquerdo += 1
 
         self.lbl_tamanho = ttk.Label(self.frame_controls, text="Tamanho:", font=fonte, anchor="w")
-        self.lbl_tamanho.grid(row=4, column=0, padx=espaco, pady=espaco, sticky="nsew")
+        self.lbl_tamanho.grid(row=linha_painel_esquerdo, column=0, padx=espaco, pady=espaco, sticky="nsew")
 
         self.lbl_tamanho_exibir = ttk.Label(self.frame_controls, text=(10*"-"), font=fonte, anchor="e")
-        self.lbl_tamanho_exibir.grid(row=4, column=1, padx=espaco, pady=espaco, sticky="nsew")
+        self.lbl_tamanho_exibir.grid(row=linha_painel_esquerdo, column=1, padx=espaco, pady=espaco, sticky="nsew")
+        linha_painel_esquerdo += 1
 
         # Definindo suas variáveis de espaçamento
         espacox = espaco
         espacoy = 15
 
         # Usando o separador customizado
-        criar_separador_com_texto(self.frame_controls, "EM EXECUÇÃO", linha=5, espacox=espacox, espacoy=espacoy)
+        criar_separador_com_texto(self.frame_controls, "EM EXECUÇÃO", linha=linha_painel_esquerdo, espacox=espacox, espacoy=espacoy)
+        linha_painel_esquerdo += 1
 
-        self.moldura_borda = ttk.Frame(self.frame_controls, relief="solid", borderwidth=1, padding=10)
-        self.moldura_borda.grid(row=6, rowspan=5, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
+        linha_estendida_moldura_execucao = 5
+        self.frame_controls.rowconfigure(linha_painel_esquerdo, weight=0)
+        self.moldura_execucao_borda = ttk.Frame(self.frame_controls, height=110, relief="solid", borderwidth=1)
+        self.moldura_execucao_borda.grid(row=linha_painel_esquerdo, rowspan=linha_estendida_moldura_execucao, columnspan=2,
+                                         padx=espaco, pady=espaco, sticky="ew")
+        self.moldura_execucao_borda.grid_propagate(False)
+        self.moldura_execucao_borda.pack_propagate(False)
+        linha_painel_esquerdo += 1 + linha_estendida_moldura_execucao
 
         # Texto de exemplo
         texto_longo = (
@@ -96,19 +157,57 @@ class BackupAgendado:
             "- Próxima verificação agendada para às 20:00."
         )
 
-        self.lbl_multi = ttk.Label(
-            self.moldura_borda,
+        self.frame_controls.update_idletasks()
+        largura_moldura = self.moldura_execucao_borda.winfo_width()
+
+        self.lbl_multi_execucao = ttk.Label(
+            self.moldura_execucao_borda,
             text=texto_longo,
             justify="left",
-            wraplength=350,
-            font=fonte
+            wraplength=largura_moldura - 10 * 2,
+            font=fonte,
+            padding=(10, 4, 10, 0)
         )
-        self.lbl_multi.pack(anchor="w")
+        self.lbl_multi_execucao.pack(anchor="w")
 
         self.btn_encerrar = ttk.Button(self.frame_controls, text="Encerrar Tarefa", command="")
-        self.btn_encerrar.grid(row=(7 + 5), columnspan=2, padx=espacox, pady=espacox, sticky="nsew")
+        self.btn_encerrar.grid(row=linha_painel_esquerdo, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
 
         ## Controles do painel direito
+        #self.janela.update_idletasks()
+        #print(janela.winfo_height())
+
+        linha_painel_direito = 0
+        linha_estendida_moldura_andamento = 7
+        self.frame_andamento.rowconfigure(linha_painel_direito, weight=0)
+        self.frame_andamento.columnconfigure(linha_painel_direito, weight=1)
+
+        self.moldura_andamento_atual = ttk.Frame(self.frame_andamento, height=341, relief="solid", borderwidth=1, padding=10)
+        self.moldura_andamento_atual.grid(row=linha_painel_direito, rowspan=linha_estendida_moldura_andamento,
+                                          column=0, columnspan=3, padx=espaco, pady=espaco, sticky="ew")
+        self.moldura_andamento_atual.grid_propagate(False)
+        self.moldura_andamento_atual.pack_propagate(False)
+        linha_painel_direito += linha_estendida_moldura_andamento
+
+        self.lbl_multi_andamento = ttk.Label(
+            self.moldura_andamento_atual,
+            text=texto_longo,
+            justify="left",
+            wraplength=500,
+            font=fonte,
+            padding=(10, 4, 10, 0)
+        )
+        self.lbl_multi_andamento.pack(anchor="w")
+
+        self.lbl_copiado = ttk.Label(self.frame_andamento, text="Copiado:", justify="left", font=fonte)
+        self.lbl_copiado.grid(row=linha_painel_direito, column=0, padx=espaco, pady=espaco, sticky="nsew")
+
+        self.lbl_copiado_tamanho = ttk.Label(self.frame_andamento, text=(8*"-"), justify="center", font=fonte)
+        self.lbl_copiado_tamanho.grid(row=linha_painel_direito, column=1, padx=espaco, pady=espaco, sticky="nsew")
+
+        self.progress_canvas = tk.Canvas(self.frame_andamento, height=25, bg="white", highlightthickness=1,
+                                    highlightbackground="black")
+        self.progress_canvas.grid(row=linha_painel_direito, column=2, padx=espaco, pady=espaco, sticky="e")
 
 if __name__ == "__main__":
     root = tk.Tk()
