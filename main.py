@@ -128,7 +128,7 @@ class BackupAgendado:
         self.frame_controls.grid(row=0, column=0, padx=espaco, pady=espaco, sticky="nsew")
 
         self.frame_andamento = ttk.Frame(self.janela)
-        self.frame_andamento.grid(row=0, column=1, sticky="nsew")
+        self.frame_andamento.grid(row=0, column=1, padx=espaco, pady=espaco, sticky="nsew")
 
         ## Controles do painel esquerdo
         linha_painel_esquerdo = 0
@@ -212,7 +212,7 @@ class BackupAgendado:
         self.frame_andamento.rowconfigure(linha_painel_direito, weight=0)
         self.frame_andamento.columnconfigure(linha_painel_direito, weight=1)
 
-        self.moldura_andamento_atual = ttk.Frame(self.frame_andamento, height=341, relief="solid", borderwidth=1, padding=10)
+        self.moldura_andamento_atual = ttk.Frame(self.frame_andamento, height=336, relief="solid", borderwidth=1, padding=10)
         self.moldura_andamento_atual.grid(row=linha_painel_direito, rowspan=linha_estendida_moldura_andamento,
                                           column=0, columnspan=3, padx=espaco, pady=espaco, sticky="ew")
         self.moldura_andamento_atual.grid_propagate(False)
