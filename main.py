@@ -6,7 +6,23 @@ from tkinter import ttk, messagebox
 import re
 
 import verificarversao
-from configuracoes import JanelaConfiguracao
+from funcoes import Controles
+from janela_config import JanelaConfiguracao
+from nova_tarefa import JanelaNovaTarefa
+
+def abrir_nova_tarefa(janela_principal):
+    # 1. Cria a parte visual
+    visual = JanelaNovaTarefa(janela_principal)
+
+    # 2. Cria a lógica e passa a visão para ela controlar
+    logica = Controles(visual)
+
+def abrir_configuracoes(janela_principal):
+    # 1. Cria a parte visual
+    visual = JanelaConfiguracao(janela_principal)
+
+    # 2. Cria a lógica e passa a visão para ela controlar
+    logica = Controles(visual)
 
 ## Variáveis principais
 version = "4.0.0"
@@ -45,7 +61,7 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
     sep_direita.grid(row=0, column=2, sticky="ew", padx=(10, 0))
 
 ## Barra de Menus
-def barra_menu(janela, lbl_log):
+def criar_barra_menu(janela, lbl_log):
     # Criar barra de menu
     barra_menu = tk.Menu(janela)
     janela.config(menu=barra_menu)
@@ -70,7 +86,17 @@ def barra_menu(janela, lbl_log):
             print("Sistema não suportado")
 
     ## Notas da versão
-    def extrair_ultima_versao_changelog(caminho_arquivo):
+    def extrair_ultima_versao_changelog():
+        caminho_arquivo = "CHANGELOG.md"
+        if platform.system() == "Windows":
+            caminho_arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
+            subprocess.run(["notepad", caminho_arquivo])
+        elif platform.system() == "Linux":
+            caminho_arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
+            subprocess.run(["xdg-open", caminho_arquivo])  # ou "gedit"
+        else:
+            print("Sistema não suportado")
+
         try:
             with open(caminho_arquivo, "r", encoding="utf-8") as f:
                 conteudo = f.read()
@@ -95,13 +121,15 @@ def barra_menu(janela, lbl_log):
 
     # --- COMO USAR NO SEU PROGRAMA ---
     # Se o seu arquivo se chamar 'changelog.md':
-    arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
+    #arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
     #texto_da_ultima_versao = extrair_ultima_versao_changelog(arquivo)
     #print(texto_da_ultima_versao)
 
     # Manu Arquivo
     menu_arquivo = tk.Menu(barra_menu, tearoff=0)
-    menu_arquivo.add_command(label="Configurações", command=lambda: JanelaConfiguracao(janela))
+    #menu_arquivo.add_command(label="Nova Tarefa", command=lambda: JanelaConfiguracao(janela))
+    menu_arquivo.add_command(label="Nova Tarefa", command=lambda: abrir_nova_tarefa(janela))
+    menu_arquivo.add_command(label="Configurações", command=lambda: abrir_configuracoes(janela))
     menu_arquivo.add_command(label="Sair", command=janela.quit)
     barra_menu.add_cascade(label="Arquivo", menu=menu_arquivo)
 
@@ -110,7 +138,7 @@ def barra_menu(janela, lbl_log):
     menu_ajuda.add_command(label="Verificar atualização",
                            command=lambda: verificarversao.consultar_lancamento(repo, version))
     menu_ajuda.add_command(label="Notas da versão",
-                           command=lambda: lbl_log.config(text=extrair_ultima_versao_changelog(arquivo)))
+                           command=lambda: lbl_log.config(text=extrair_ultima_versao_changelog()))
     menu_ajuda.add_command(label="Sobre",
                            command=lambda: visitar_site())
     barra_menu.add_cascade(label="Ajuda", menu=menu_ajuda)
@@ -204,9 +232,6 @@ class BackupAgendado:
         self.btn_encerrar.grid(row=linha_painel_esquerdo, columnspan=2, padx=espaco, pady=espaco, sticky="nsew")
 
         ## Controles do painel direito
-        #self.janela.update_idletasks()
-        #print(janela.winfo_height())
-
         linha_painel_direito = 0
         linha_estendida_moldura_andamento = 7
         self.frame_andamento.rowconfigure(linha_painel_direito, weight=0)
@@ -240,7 +265,7 @@ class BackupAgendado:
         self.progress_canvas.grid(row=linha_painel_direito, column=2, padx=espaco, pady=espaco, sticky="e")
 
         ## Carregar Menus
-        barra_menu(self.janela, self.lbl_multi_andamento)
+        criar_barra_menu(self.janela, self.lbl_multi_andamento)
 
 if __name__ == "__main__":
     root = tk.Tk()

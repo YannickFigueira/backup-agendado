@@ -1,23 +1,24 @@
 import tkinter as tk
 from tkinter import ttk
 
-import funcoes
-
 # Medidas
 espaco = 5
 # Estilo
 fonte=("Arial", 11, "normal")
 
-class JanelaConfiguracao:
+class JanelaNovaTarefa:
     def __init__(self, janela):
-        self.janela_config = tk.Toplevel(janela)
-        self.janela_config.title("Configurações")
+        self.janela_nova_tarefa = tk.Toplevel(janela)
+        self.janela_nova_tarefa.title("Nova Tarefa")
         #self.janela_config.geometry("600x400")
         # Garante que esta janela apareça SEMPRE por cima da principal
-        self.janela_config.transient(janela)
-        self.style = ttk.Style(self.janela_config)
+        self.janela_nova_tarefa.transient(janela)
+        self.style = ttk.Style(self.janela_nova_tarefa)
         self.style.configure("Tamanho.TCheckbutton", font=fonte)
         self.style.configure("Fonte.TButton", font=fonte)
+
+        self.nome_janela = "nova_tarefa"  # <-- Identificador para o controlador
+        self.controles = {}
 
         self.style.map(
             "Tamanho.TCheckbutton",
@@ -27,14 +28,17 @@ class JanelaConfiguracao:
             foreground=[('active', 'black')]
         )
 
+        self._criar_layout()
+
+    def _criar_layout(self):
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
-        self.janela_config.grab_set()
+        self.janela_nova_tarefa.grab_set()
 
         ## Painel da janela
-        self.frame_campos = ttk.Frame(self.janela_config)
+        self.frame_campos = ttk.Frame(self.janela_nova_tarefa)
         self.frame_campos.grid(row=0, column=0, padx=espaco, pady=espaco, sticky="ew")
 
-        self.frame_checkbox = ttk.Frame(self.janela_config)
+        self.frame_checkbox = ttk.Frame(self.janela_nova_tarefa)
         self.frame_checkbox.grid(row=1, column=0, padx=espaco, pady=espaco, sticky="ew")
 
         ## Controles do painel campos
@@ -45,9 +49,11 @@ class JanelaConfiguracao:
         largura_texto = 30
         self.txt_origem = ttk.Entry(self.frame_campos, width=largura_texto, font=fonte)
         self.txt_origem.grid(row=linha_campo, column=1, padx=espaco, pady=espaco)
+        self.controles['txt_origem'] = self.txt_origem
 
-        self.btn_selecionar_origem = ttk.Button(self.frame_campos, text="...", style="Fonte.TButton", command=lambda: selecionar_origem())
+        self.btn_selecionar_origem = ttk.Button(self.frame_campos, text="...", style="Fonte.TButton")
         self.btn_selecionar_origem.grid(row=linha_campo, column=2, padx=espaco, pady=espaco)
+        self.controles['btn_selecionar_origem'] = self.btn_selecionar_origem
         linha_campo += 1
 
         self.lbl_destino = ttk.Label(self.frame_campos, text="Destino:", font=fonte)
@@ -55,9 +61,11 @@ class JanelaConfiguracao:
 
         self.txt_destino = ttk.Entry(self.frame_campos, width=largura_texto, font=fonte)
         self.txt_destino.grid(row=linha_campo, column=1, padx=espaco, pady=espaco)
+        self.controles['txt_destino'] = self.txt_destino
 
-        self.btn_selecionar_destino = ttk.Button(self.frame_campos, text="...", style="Fonte.TButton", command=lambda: selecionar_destino())
+        self.btn_selecionar_destino = ttk.Button(self.frame_campos, text="...", style="Fonte.TButton")
         self.btn_selecionar_destino.grid(row=linha_campo, column=2, padx=espaco, pady=espaco)
+        self.controles['btn_selecionar_destino'] = self.btn_selecionar_destino
         linha_campo += 1
 
         self.lbl_horario = ttk.Label(self.frame_campos, text="Horario:", font=fonte)
@@ -122,12 +130,3 @@ class JanelaConfiguracao:
         self.btn_gravar = ttk.Button(self.frame_checkbox, width=largura_botao, text="Gravar Tarefa", style="Fonte.TButton")
         self.btn_gravar.grid(row=2, rowspan=2, column=2, padx=espaco, pady=espaco, sticky="nsew")
         self.btn_gravar.configure(state="disabled")
-
-        ### Comandos ###
-        def selecionar_origem():
-            self.txt_origem.delete(0, "end")
-            self.txt_origem.insert(0, funcoes.selecionar_pasta())
-
-        def selecionar_destino():
-            self.txt_destino.delete(0, "end")
-            self.txt_destino.insert(0, funcoes.selecionar_pasta())
