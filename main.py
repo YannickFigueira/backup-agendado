@@ -8,7 +8,7 @@ import re
 import verificarversao
 from funcoes import Controles
 from janela_config import JanelaConfiguracao
-from nova_tarefa import JanelaNovaTarefa
+from janela_nova_tarefa import JanelaNovaTarefa
 
 def abrir_nova_tarefa(janela_principal):
     # 1. Cria a parte visual

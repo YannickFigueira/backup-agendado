@@ -1,0 +1,2 @@
+class JanelaPrincipal:
+    pass
