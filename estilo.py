@@ -17,4 +17,5 @@ ARQUIVO_ERRO = "backup_agendado.log"
 
 # Estilo
 FONTE_VAZIA=("", 11, "normal")
+FONTE_ARIAL=("Arial", 11, "normal")
 # Variáveis gerais

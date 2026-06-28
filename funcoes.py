@@ -109,13 +109,13 @@ class Funcoes:
     def _vincular_janela_principal(self):
         # --- Controle do Menu ---
         # -- Menu Arquivo --
-        self.view.controles['menu_arquivo'].add_command(label="Nova Tarefa",
-                                        command=lambda: self.abrir_nova_tarefa(self.view.controles['janela_principal']))
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
                                     command=lambda: self.abrir_configuracoes(self.view.controles['janela_principal']))
+        self.view.controles['menu_arquivo'].add_command(label="Logs",
+                                    command=lambda: self.abrir_log_backup(self.view.controles['janela_principal']))
         # Mudar comado para withdraw
         self.view.controles['menu_arquivo'].add_command(label="Sair",
-                                                        command=lambda: self.view.controles['janela_principal'].quit) # Mudar para withdraw
+                                                        command=lambda: self.view.controles['janela_principal'].quit()) # Mudar para withdraw
 
         # -- Menu Ajuda --
         self.view.controles['menu_ajuda'].add_command(label="Verificar atualização",
@@ -149,17 +149,16 @@ class Funcoes:
         self.view.controles['btn_salvar'].config(command=lambda: self.salvar_configuracoes())
 
     # --- Funções das janelas ---
-
-    def abrir_nova_tarefa(self, janela_principal):
+    def abrir_configuracoes(self, janela_principal):
         # 1. Cria a parte visual
-        visual = JanelaNovaTarefa(self.view.controles['janela_principal'])
+        visual = JanelaConfiguracao(self.view.controles['janela_principal'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
 
-    def abrir_configuracoes(self, janela_principal):
+    def abrir_nova_tarefa(self, janela_principal):
         # 1. Cria a parte visual
-        visual = JanelaConfiguracao(self.view.controles['janela_principal'])
+        visual = JanelaNovaTarefa(self.view.controles['janela_principal'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
