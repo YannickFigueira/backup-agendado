@@ -6,6 +6,7 @@ from tkinter import filedialog, ttk, messagebox
 import estilo
 import verificarversao
 from janela_config import JanelaConfiguracao
+from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
 
 def selecionar_pasta():
@@ -101,8 +102,8 @@ class Funcoes:
                 self._vincular_janela_principal()
             elif view.nome_janela == "configuracao":
                 self._vincular_configuracoes()
-            elif view.nome_janela == "nova_tarefa":
-                self._vincular_nova_tarefa()
+            elif view.nome_janela == "log-backup":
+                self._vincular_logs_backup()
 
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
@@ -112,7 +113,7 @@ class Funcoes:
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
                                     command=lambda: self.abrir_configuracoes(self.view.controles['janela_principal']))
         self.view.controles['menu_arquivo'].add_command(label="Logs",
-                                    command=lambda: self.abrir_log_backup(self.view.controles['janela_principal']))
+                                    command=lambda: self.abrir_logs_backup(self.view.controles['janela_principal']))
         # Mudar comado para withdraw
         self.view.controles['menu_arquivo'].add_command(label="Sair",
                                                         command=lambda: self.view.controles['janela_principal'].quit()) # Mudar para withdraw
@@ -130,7 +131,7 @@ class Funcoes:
 
 
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
-    def _vincular_nova_tarefa(self):
+    def _vincular_configuracoes(self):
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
 
@@ -144,14 +145,20 @@ class Funcoes:
         self.view.controles['txt_destino'].insert(0, selecionar_pasta())
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
-    def _vincular_configuracoes(self):
-        # Vincula o clique do botão da janela à função correspondente
-        self.view.controles['btn_salvar'].config(command=lambda: self.salvar_configuracoes())
+    def _vincular_logs_backup(self):
+        pass
 
     # --- Funções das janelas ---
     def abrir_configuracoes(self, janela_principal):
         # 1. Cria a parte visual
         visual = JanelaConfiguracao(self.view.controles['janela_principal'])
+
+        # 2. Cria a lógica e passa a visão para ela controlar
+        logica = Funcoes(visual)
+
+    def abrir_logs_backup(self, janela_principal):
+        # 1. Cria a parte visual
+        visual = JanelaLogsBackup(self.view.controles['janela_principal'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)

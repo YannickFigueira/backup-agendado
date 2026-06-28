@@ -14,7 +14,7 @@ class JanelaConfiguracao:
         self.style.configure("Tamanho.TCheckbutton", font=estilo.FONTE_ARIAL)
         self.style.configure("Fonte.TButton", font=estilo.FONTE_ARIAL)
 
-        self.nome_janela = "nova_tarefa"  # <-- Identificador para o controlador
+        self.nome_janela = "configuracao"  # <-- Identificador para o controlador
         self.controles = {}
 
         self.style.map(
@@ -26,6 +26,7 @@ class JanelaConfiguracao:
         )
 
         self._criar_layout()
+        self._criar_barra_menu()
 
     def _criar_layout(self):
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
@@ -161,3 +162,6 @@ class JanelaConfiguracao:
                                      style="Fonte.TButton")
         self.btn_remover.grid(row=1, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
         self.btn_remover.configure(state="disabled")
+
+    def _criar_barra_menu(self):
+        pass
