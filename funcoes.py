@@ -96,10 +96,6 @@ class Funcoes:
     def __init__(self, view):
         self.view = view
 
-        carregar_dados = dados_tinydb.carregar_dados_tarefa()
-        tarefa_dados = ""
-        for nome_tarefa, leitura in carregar_dados['tarefa'].items():
-
         # Teste dos dados
         # Exemplo de como você leria isso no seu script de automação:
         #dados_tinydb.atualizar_campo_tarefa('tarefa6', 'hora', '17')
@@ -126,6 +122,16 @@ class Funcoes:
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
     def _vincular_janela_principal(self):
+        # --- Inicialização dos dados ---
+        carregar_dados = dados_tinydb.carregar_dados_tarefa()
+        lista_nomes = list(carregar_dados['tarefas'].keys())
+        self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
+        self.view.controles['cmb_selecao'].current(0)
+        nome_tarefa = self.view.controles['cmb_selecao'].get()
+        hora = carregar_dados['tarefas'][nome_tarefa]['hora']
+        minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
+        self.view.controles['lbl_hora_execucao'].config(text=f"{hora}:{minuto}")
+
         # --- Controle do Menu ---
         # -- Menu Arquivo --
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
@@ -146,6 +152,9 @@ class Funcoes:
         # --- Controle da Janela Principal ---
         criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
+
+        # --- Controle da janela ---
+
 
 
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---

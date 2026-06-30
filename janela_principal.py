@@ -34,6 +34,7 @@ class JanelaPrincipal:
 
         self.cmb_selecao = ttk.Combobox(self.frame_controls, font=estilo.FONTE_VAZIA, state="readonly")
         self.cmb_selecao.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['cmb_selecao'] = self.cmb_selecao
         estilo.LINHA_PAINEL_ESQUERDO += 1
 
         self.lbl_horario = ttk.Label(self.frame_controls, text="Horário:", font=estilo.FONTE_VAZIA)
@@ -41,6 +42,7 @@ class JanelaPrincipal:
 
         self.lbl_hora_execucao = ttk.Label(self.frame_controls, text="--:--", font=estilo.FONTE_VAZIA, anchor="center")
         self.lbl_hora_execucao.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['lbl_hora_execucao'] = self.lbl_hora_execucao
         estilo.LINHA_PAINEL_ESQUERDO += 1
         linha_estendida_moldura_andamento = estilo.LINHA_PAINEL_ESQUERDO
 
