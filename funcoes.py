@@ -9,6 +9,9 @@ from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
 
+# --- Inicialização de variáveis ---
+carregar_dados = dados_tinydb.carregar_dados_tarefa()
+# --- Funções de controle geral ---
 def selecionar_pasta():
     pasta = filedialog.askdirectory(title="Selecione uma pasta")
     if pasta:  # se o usuário não cancelar
@@ -123,7 +126,7 @@ class Funcoes:
     # --- LÓGICA DA JANELA PRINCIPAL ---
     def _vincular_janela_principal(self):
         # --- Inicialização dos dados ---
-        carregar_dados = dados_tinydb.carregar_dados_tarefa()
+
         lista_nomes = list(carregar_dados['tarefas'].keys())
         self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
         self.view.controles['cmb_selecao'].current(0)
@@ -154,7 +157,7 @@ class Funcoes:
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
         # --- Controle da janela ---
-
+        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_horario)
 
 
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
@@ -196,3 +199,10 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+
+    # --- Funções da Janela Principal ---
+    def atualizar_horario(self, event = None):
+        nome_tarefa = self.view.controles['cmb_selecao'].get()
+        hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
+        minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
+        self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
