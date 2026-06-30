@@ -4,7 +4,7 @@ import subprocess
 from tkinter import filedialog, ttk, messagebox
 
 import estilo
-import verificarversao
+import verificarversao, dados
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
@@ -95,6 +95,13 @@ def abrir_logs():
 class Funcoes:
     def __init__(self, view):
         self.view = view
+
+        # Teste dos dados
+        # Exemplo de como você leria isso no seu script de automação:
+        for nome_tarefa, leitura in dados.config_atual['tarefas'].items():
+            print(f"A {nome_tarefa} está agendada para as {leitura['hora']}:{leitura['minuto']}")
+            # Saída: A tarefa1 está agendada para as 10:45
+            # Saída: A tarefa2 está agendada para as 12:30...
 
         # O controlador se adapta automaticamente baseando-se em qual janela o chamou
         if hasattr(view, 'nome_janela'):
