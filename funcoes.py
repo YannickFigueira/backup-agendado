@@ -1,7 +1,9 @@
 import platform
 import re
 import subprocess
+
 from tkinter import filedialog, ttk, messagebox
+from datetime import datetime
 
 import estilo
 import verificarversao, dados_tinydb
@@ -11,6 +13,9 @@ from janela_nova_tarefa import JanelaNovaTarefa
 
 # --- Inicialização de variáveis ---
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
+agora = datetime.now()
+hora_formatada = agora.strftime("%H:%M:%S")
+
 # --- Funções de controle geral ---
 def selecionar_pasta():
     pasta = filedialog.askdirectory(title="Selecione uma pasta")

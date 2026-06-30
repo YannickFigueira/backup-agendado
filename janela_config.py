@@ -87,8 +87,9 @@ class JanelaConfiguracao:
         # Spinbox das Horas (00 a 23)
         # format="%02.0f" garante que mostre '01' em vez de '1'
         self.spin_hora = ttk.Spinbox(self.frame_hora, from_=0, to=23, format="%02.0f", width=3, wrap=True, font=("Segoe UI", 12))
-        self.spin_hora.set("12")  # Hora padrão
+        self.spin_hora.set("17")  # Hora padrão
         self.spin_hora.grid(row=0, column=0)
+        self.controles['spin_hora'] = self.spin_hora
 
         # Separador dos dois pontos
         self.lbl_dois_pontos = ttk.Label(self.frame_hora, text=":", font=("Segoe UI", 14, "bold"))
