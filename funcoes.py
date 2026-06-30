@@ -4,7 +4,7 @@ import subprocess
 from tkinter import filedialog, ttk, messagebox
 
 import estilo
-import verificarversao, dados
+import verificarversao, dados_tinydb
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
@@ -96,13 +96,24 @@ class Funcoes:
     def __init__(self, view):
         self.view = view
 
+        carregar_dados = dados_tinydb.carregar_dados_tarefa()
+        tarefa_dados = ""
+        for nome_tarefa, leitura in carregar_dados['tarefa'].items():
+
         # Teste dos dados
         # Exemplo de como você leria isso no seu script de automação:
-        for nome_tarefa, leitura in dados.config_atual['tarefas'].items():
+        #dados_tinydb.atualizar_campo_tarefa('tarefa6', 'hora', '17')
+        #dados_tinydb.apagar_dados_tarefa('tarefa4')
+        #dados_tinydb.gravar_dados_geral()
+        """
+        carregar_dados = dados_tinydb.carregar_dados_tarefa()
+        for nome_tarefa, leitura in carregar_dados['tarefas'].items():
             print(f"A {nome_tarefa} está agendada para as {leitura['hora']}:{leitura['minuto']}")
+            print(f"A {nome_tarefa} está executando {leitura['executando']}")
+            print(f"Listar as pastas configuradas origem {leitura['pastas_origem']}, destino {leitura['pastas_destino']}")
             # Saída: A tarefa1 está agendada para as 10:45
             # Saída: A tarefa2 está agendada para as 12:30...
-
+"""
         # O controlador se adapta automaticamente baseando-se em qual janela o chamou
         if hasattr(view, 'nome_janela'):
             if view.nome_janela == "janela-principal":
