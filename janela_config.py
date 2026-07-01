@@ -165,4 +165,7 @@ class JanelaConfiguracao:
         self.btn_remover.configure(state="disabled")
 
     def _criar_barra_menu(self):
-        pass
+        self.barra_menu = tk.Menu(self.janela_configuracao)
+        self.janela_configuracao.config(menu=self.barra_menu)
+        self.controles['barra_menu'] = self.barra_menu
+        

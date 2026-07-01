@@ -165,10 +165,15 @@ class Funcoes:
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_horario)
 
 
-    # --- LÓGICA DA JANELA DE NOVA TAREFA ---
+    # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
+        # --- Controles da Janela Configurações ---
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+
+        # --- Controle dos Menus ---
+        self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
+                                                       command=lambda: self.habilitar_edicao())
 
     # Ações da janela
     def selecionar_origem(self):
@@ -211,3 +216,7 @@ class Funcoes:
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
         self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
+
+    # --- Funções da Janela Configurações ---
+    def habilitar_edicao(self):
+        print("Edição habilitada")
