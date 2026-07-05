@@ -167,9 +167,17 @@ class Funcoes:
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
+        # --- Inicialização ---
+        lista_nomes = list(carregar_dados['tarefas'].keys())
+        self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
+        self.view.controles['cmb_selecao'].current(0)
+        self.atualizar_configuracao()
+
         # --- Controles da Janela Configurações ---
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_configuracao)
+        self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
 
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
@@ -220,3 +228,50 @@ class Funcoes:
     # --- Funções da Janela Configurações ---
     def habilitar_edicao(self):
         print("Edição habilitada")
+
+    def atualizar_configuracao(self, event = None):
+        nome_tarefa = self.view.controles['cmb_selecao'].get()
+        self.view.controles['txt_tarefa'].delete(0, "end")
+        self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
+        hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
+        minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
+        desligar = carregar_dados['tarefas'][nome_tarefa]['desligar']
+        self.view.controles['spin_hora'].set(hora_atualizada)
+        self.view.controles['spin_min'].set(minuto_atualizado)
+        self.view.controles['var_desligar'].set(desligar)
+        semanas =  ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+        chk_boxes = carregar_dados['tarefas'][nome_tarefa]['execucao']
+        for i in range(len(chk_boxes)):
+            self.view.controles[f'var_{semanas[i]}'].set(chk_boxes[i])
+
+        diario = self.view.controles['var_diariamente'].get()
+        index = 1
+        if diario:
+            print("Marcado")
+            for i in range (len(chk_boxes) - 1):
+                self.view.controles[f'chk_{semanas[index]}'].configure(state="disabled")
+                index += 1
+        else:
+            print("Desmarcado")
+            for i in range (len(chk_boxes) - 1):
+                self.view.controles[f'chk_{semanas[index]}'].configure(state="normal")
+                index += 1
+
+    def atualizar_checkbox(self):
+        diario = self.view.controles['var_diariamente'].get()
+
+        # Lista com as chaves dos dias para o código ficar limpo
+        dias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+
+        if diario:
+            for dia in dias:
+                # 1. Altera apenas o estado para desabilitado (SEM mexer no parâmetro variable)
+                self.view.controles[f'chk_{dia}'].configure(state="disabled")
+                # 2. Atualiza o valor da variável original correspondente para True (marcado)
+                self.view.controles[f'var_{dia}'].set(True)
+        else:
+            for dia in dias:
+                # 1. Altera o estado de volta para normal
+                self.view.controles[f'chk_{dia}'].configure(state="normal")
+                # 2. Atualiza o valor da variável original correspondente para False (desmarcado)
+                self.view.controles[f'var_{dia}'].set(False)

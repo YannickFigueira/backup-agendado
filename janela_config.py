@@ -99,39 +99,65 @@ class JanelaConfiguracao:
         self.spin_min = ttk.Spinbox(self.frame_hora, from_=0, to=59, format="%02.0f", width=3, wrap=True, font=("Segoe UI", 12))
         self.spin_min.set("00")  # Minuto padrão
         self.spin_min.grid(row=0, column=2)
+        self.controles['spin_min'] = self.spin_min
 
-        self.chk_desligar = ttk.Checkbutton(self.frame_campos, text="Desligar", style="Tamanho.TCheckbutton")
+        self.var_desligar = tk.BooleanVar()
+        self.chk_desligar = ttk.Checkbutton(self.frame_campos, text="Desligar", style="Tamanho.TCheckbutton", variable=self.var_desligar)
         self.chk_desligar.grid(row=linha_campo, column=2, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="e")
+        self.controles['var_desligar'] = self.var_desligar
 
         # --- Painel Checkbutton ---
         linha_check = 0
         self.var_diariamente = tk.BooleanVar(value=True)
         self.chk_diariamente = ttk.Checkbutton(self.frame_checkbox, text="Diariamente", style="Tamanho.TCheckbutton", variable=self.var_diariamente)
         self.chk_diariamente.grid(row=linha_check, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_diariamente'] = self.var_diariamente
+        self.controles['chk_diariamente'] = self.chk_diariamente
 
-        self.chk_quarta = ttk.Checkbutton(self.frame_checkbox, text="Quarta-Feira", style="Tamanho.TCheckbutton")
+        self.var_quarta = tk.BooleanVar(value=False)
+        self.chk_quarta = ttk.Checkbutton(self.frame_checkbox, text="Quarta-Feira", style="Tamanho.TCheckbutton", variable=self.var_quarta)
         self.chk_quarta.grid(row=linha_check, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_quarta'] = self.var_quarta
+        self.controles['chk_quarta'] = self.chk_quarta
         linha_check += 1
 
-        self.chk_domingo = ttk.Checkbutton(self.frame_checkbox, text="Domingo", style="Tamanho.TCheckbutton")
+        self.var_domingo = tk.BooleanVar(value=False)
+        self.chk_domingo = ttk.Checkbutton(self.frame_checkbox, text="Domingo", style="Tamanho.TCheckbutton", variable=self.var_domingo)
         self.chk_domingo.grid(row=linha_check, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_domingo'] = self.var_domingo
+        self.controles['chk_domingo'] = self.chk_domingo
 
-        self.chk_quinta = ttk.Checkbutton(self.frame_checkbox, text="Quinta-Feira", style="Tamanho.TCheckbutton")
+        self.var_quinta = tk.BooleanVar(value=False)
+        self.chk_quinta = ttk.Checkbutton(self.frame_checkbox, text="Quinta-Feira", style="Tamanho.TCheckbutton", variable=self.var_quinta)
         self.chk_quinta.grid(row=linha_check, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_quinta'] = self.var_quinta
+        self.controles['chk_quinta'] = self.chk_quinta
         linha_check += 1
 
-        self.chk_segunda = ttk.Checkbutton(self.frame_checkbox, text="Segunda-Feira", style="Tamanho.TCheckbutton")
+        self.var_segunda = tk.BooleanVar(value=False)
+        self.chk_segunda = ttk.Checkbutton(self.frame_checkbox, text="Segunda-Feira", style="Tamanho.TCheckbutton", variable=self.var_segunda)
         self.chk_segunda.grid(row=linha_check, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_segunda'] = self.var_segunda
+        self.controles['chk_segunda'] = self.chk_segunda
 
-        self.chk_sexta = ttk.Checkbutton(self.frame_checkbox, text="Sexta-Feira", style="Tamanho.TCheckbutton")
+        self.var_sexta = tk.BooleanVar(value=False)
+        self.chk_sexta = ttk.Checkbutton(self.frame_checkbox, text="Sexta-Feira", style="Tamanho.TCheckbutton", variable=self.var_sexta)
         self.chk_sexta.grid(row=linha_check, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_sexta'] = self.var_sexta
+        self.controles['chk_sexta'] = self.chk_sexta
         linha_check += 1
 
-        self.chk_terca = ttk.Checkbutton(self.frame_checkbox, text="Terça-Feira", style="Tamanho.TCheckbutton")
+        self.var_terca = tk.BooleanVar(value=False)
+        self.chk_terca = ttk.Checkbutton(self.frame_checkbox, text="Terça-Feira", style="Tamanho.TCheckbutton", variable=self.var_terca)
         self.chk_terca.grid(row=linha_check, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_terca'] = self.var_terca
+        self.controles['chk_terca'] = self.chk_terca
 
-        self.chk_sabado = ttk.Checkbutton(self.frame_checkbox, text="Sábado", style="Tamanho.TCheckbutton")
+        self.var_sabado = tk.BooleanVar(value=False)
+        self.chk_sabado = ttk.Checkbutton(self.frame_checkbox, text="Sábado", style="Tamanho.TCheckbutton", variable=self.var_sabado)
         self.chk_sabado.grid(row=linha_check, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_sabado'] = self.var_sabado
+        self.controles['chk_sabado'] = self.chk_sabado
 
         largura_botao = 20
         self.btn_add_pasta = ttk.Button(self.frame_checkbox, width=largura_botao, text="Add Pasta", style="Fonte.TButton")
@@ -147,6 +173,7 @@ class JanelaConfiguracao:
 
         self.cmb_selecao = ttk.Combobox(self.frame_alterar, font=estilo.FONTE_VAZIA, state="readonly")
         self.cmb_selecao.grid(row=0, column=1, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['cmb_selecao'] = self.cmb_selecao
 
         largura_btn_alterar = 15
         self.btn_alterar = ttk.Button(self.frame_alterar, width=largura_btn_alterar, text="Alterar Tarefa",
@@ -168,4 +195,3 @@ class JanelaConfiguracao:
         self.barra_menu = tk.Menu(self.janela_configuracao)
         self.janela_configuracao.config(menu=self.barra_menu)
         self.controles['barra_menu'] = self.barra_menu
-        
