@@ -44,8 +44,9 @@ class JanelaConfiguracao:
 
         ## Controles do painel campos
         linha_campo = 0
+        """
         self.lbl_origem = ttk.Label(self.frame_campos, text="Origem:", font=estilo.FONTE_ARIAL)
-        self.lbl_origem.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.lbl_origem.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
         largura_texto = 30
         self.txt_origem = ttk.Entry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
@@ -58,7 +59,7 @@ class JanelaConfiguracao:
         linha_campo += 1
 
         self.lbl_destino = ttk.Label(self.frame_campos, text="Destino:", font=estilo.FONTE_ARIAL)
-        self.lbl_destino.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.lbl_destino.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
         self.txt_destino = ttk.Entry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
         self.txt_destino.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO)
@@ -68,17 +69,25 @@ class JanelaConfiguracao:
         self.btn_selecionar_destino.grid(row=linha_campo, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO)
         self.controles['btn_selecionar_destino'] = self.btn_selecionar_destino
         linha_campo += 1
+        """
+        self.lbl_selecao = ttk.Label(self.frame_campos, text="Selecionar:", font=estilo.FONTE_ARIAL)
+        self.lbl_selecao.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+
+        self.cmb_selecao = ttk.Combobox(self.frame_campos, font=estilo.FONTE_VAZIA, state="readonly")
+        self.cmb_selecao.grid(row=linha_campo, column=1, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['cmb_selecao'] = self.cmb_selecao
+        linha_campo += 1
 
         self.lbl_tarefa = ttk.Label(self.frame_campos, text="Tarefa:", font=estilo.FONTE_ARIAL)
-        self.lbl_tarefa.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.lbl_tarefa.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
-        self.txt_tarefa = ttk.Entry(self.frame_campos, font=estilo.FONTE_ARIAL)
+        self.txt_tarefa = ttk.Entry(self.frame_campos, width=40, font=estilo.FONTE_ARIAL)
         self.txt_tarefa.grid(row=linha_campo, column=1, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="we")
         self.controles['txt_tarefa'] = self.txt_tarefa
         linha_campo += 1
 
         self.lbl_horario = ttk.Label(self.frame_campos, text="Horario:", font=estilo.FONTE_ARIAL)
-        self.lbl_horario.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.lbl_horario.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
         # Container para agrupar os elementos da hora
         self.frame_hora = ttk.Frame(self.frame_campos, padding=0)
@@ -92,7 +101,7 @@ class JanelaConfiguracao:
         self.controles['spin_hora'] = self.spin_hora
 
         # Separador dos dois pontos
-        self.lbl_dois_pontos = ttk.Label(self.frame_hora, text=":", font=("Segoe UI", 14, "bold"))
+        self.lbl_dois_pontos = ttk.Label(self.frame_hora, text=":", font=("Segoe UI", 18, "bold"))
         self.lbl_dois_pontos.grid(row=0, column=1, padx=5)
 
         # Spinbox dos Minutos (00 a 59)
@@ -101,13 +110,19 @@ class JanelaConfiguracao:
         self.spin_min.grid(row=0, column=2)
         self.controles['spin_min'] = self.spin_min
 
-        self.var_desligar = tk.BooleanVar()
-        self.chk_desligar = ttk.Checkbutton(self.frame_campos, text="Desligar", style="Tamanho.TCheckbutton", variable=self.var_desligar)
-        self.chk_desligar.grid(row=linha_campo, column=2, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="e")
-        self.controles['var_desligar'] = self.var_desligar
-
         # --- Painel Checkbutton ---
         linha_check = 0
+        self.var_desabilitar = tk.BooleanVar()
+        self.chk_desabilitar = ttk.Checkbutton(self.frame_checkbox, text="Desabilitar", style="Tamanho.TCheckbutton", variable=self.var_desabilitar)
+        self.chk_desabilitar.grid(row=linha_check, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_desabilitar'] = self.var_desabilitar
+
+        self.var_desligar = tk.BooleanVar()
+        self.chk_desligar = ttk.Checkbutton(self.frame_checkbox, text="Desligar", style="Tamanho.TCheckbutton", variable=self.var_desligar)
+        self.chk_desligar.grid(row=linha_check, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.controles['var_desligar'] = self.var_desligar
+        linha_check += 1
+
         self.var_diariamente = tk.BooleanVar(value=True)
         self.chk_diariamente = ttk.Checkbutton(self.frame_checkbox, text="Diariamente", style="Tamanho.TCheckbutton", variable=self.var_diariamente)
         self.chk_diariamente.grid(row=linha_check, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
@@ -158,38 +173,35 @@ class JanelaConfiguracao:
         self.chk_sabado.grid(row=linha_check, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
         self.controles['var_sabado'] = self.var_sabado
         self.controles['chk_sabado'] = self.chk_sabado
+        linha_check += 1
 
         largura_botao = 20
-        self.btn_add_pasta = ttk.Button(self.frame_checkbox, width=largura_botao, text="Add Pasta", style="Fonte.TButton")
-        self.btn_add_pasta.grid(row=0, rowspan=2, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-
         self.btn_gravar = ttk.Button(self.frame_checkbox, width=largura_botao, text="Gravar Tarefa", style="Fonte.TButton")
-        self.btn_gravar.grid(row=2, rowspan=2, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.btn_gravar.configure(state="disabled")
+        self.btn_gravar.grid(row=0, rowspan=5, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
 
-        # --- Painel Alterar ---
-        self.lbl_selecao = ttk.Label(self.frame_alterar, text="Selecionar Tarefa:", font=estilo.FONTE_VAZIA)
-        self.lbl_selecao.grid(row=0, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        # Texto de exemplo
+        texto_longo = (
+            "Status do Sistema:\n"
+            "  Backup da pasta 'Trabalho' concluído.\n"
+            "  Erro ao acessar a unidade E:/ (Dispositivo desconectado). extensão de teste!\n"
+            "  Próxima verificação agendada para às 20:00."
+        )
+        self.moldura_pastas = ttk.Frame(self.frame_checkbox, relief="solid", borderwidth=1, padding=10)
+        self.moldura_pastas.grid(row=linha_check, column=0,
+                                          columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
+        #self.moldura_andamento_atual.grid_propagate(False)
+        #self.moldura_andamento_atual.pack_propagate(False)
 
-        self.cmb_selecao = ttk.Combobox(self.frame_alterar, font=estilo.FONTE_VAZIA, state="readonly")
-        self.cmb_selecao.grid(row=0, column=1, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.controles['cmb_selecao'] = self.cmb_selecao
-
-        largura_btn_alterar = 15
-        self.btn_alterar = ttk.Button(self.frame_alterar, width=largura_btn_alterar, text="Alterar Tarefa",
-                                     style="Fonte.TButton")
-        self.btn_alterar.grid(row=1, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.btn_alterar.configure(state="disabled")
-
-        self.btn_adicionar = ttk.Button(self.frame_alterar, width=largura_btn_alterar, text="Adicionar Tarefa",
-                                     style="Fonte.TButton")
-        self.btn_adicionar.grid(row=1, column=1, padx=(estilo.ESPACO - 1), pady=estilo.ESPACO, sticky="nsew")
-        self.btn_adicionar.configure(state="disabled")
-
-        self.btn_remover = ttk.Button(self.frame_alterar, width=largura_btn_alterar, text="Remover Tarefa",
-                                     style="Fonte.TButton")
-        self.btn_remover.grid(row=1, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.btn_remover.configure(state="disabled")
+        self.lbl_pastas = ttk.Label(
+            self.moldura_pastas,
+            text=texto_longo,
+            justify="left",
+            wraplength=370,
+            font=estilo.FONTE_VAZIA,
+            padding=(10, 4, 10, 4)
+        )
+        self.lbl_pastas.pack(anchor="w")
+        self.controles['lbl_pastas'] = self.lbl_pastas
 
     def _criar_barra_menu(self):
         self.barra_menu = tk.Menu(self.janela_configuracao)

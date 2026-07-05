@@ -108,16 +108,7 @@ class Funcoes:
         # Exemplo de como você leria isso no seu script de automação:
         #dados_tinydb.atualizar_campo_tarefa('tarefa6', 'hora', '17')
         #dados_tinydb.apagar_dados_tarefa('tarefa4')
-        #dados_tinydb.gravar_dados_geral()
-        """
-        carregar_dados = dados_tinydb.carregar_dados_tarefa()
-        for nome_tarefa, leitura in carregar_dados['tarefas'].items():
-            print(f"A {nome_tarefa} está agendada para as {leitura['hora']}:{leitura['minuto']}")
-            print(f"A {nome_tarefa} está executando {leitura['executando']}")
-            print(f"Listar as pastas configuradas origem {leitura['pastas_origem']}, destino {leitura['pastas_destino']}")
-            # Saída: A tarefa1 está agendada para as 10:45
-            # Saída: A tarefa2 está agendada para as 12:30...
-"""
+
         # O controlador se adapta automaticamente baseando-se em qual janela o chamou
         if hasattr(view, 'nome_janela'):
             if view.nome_janela == "janela-principal":
@@ -131,7 +122,6 @@ class Funcoes:
     # --- LÓGICA DA JANELA PRINCIPAL ---
     def _vincular_janela_principal(self):
         # --- Inicialização dos dados ---
-
         lista_nomes = list(carregar_dados['tarefas'].keys())
         self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
         self.view.controles['cmb_selecao'].current(0)
@@ -174,14 +164,15 @@ class Funcoes:
         self.atualizar_configuracao()
 
         # --- Controles da Janela Configurações ---
-        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
-        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        #self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
+        #self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_configuracao)
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
 
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
                                                        command=lambda: self.habilitar_edicao())
+        self.view.controles['barra_menu'].add_command(label="Alterar Pastas")
 
     # Ações da janela
     def selecionar_origem(self):
@@ -235,9 +226,11 @@ class Funcoes:
         self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
+        desabilitar = carregar_dados['tarefas'][nome_tarefa]['desabilitar_tarefa']
         desligar = carregar_dados['tarefas'][nome_tarefa]['desligar']
         self.view.controles['spin_hora'].set(hora_atualizada)
         self.view.controles['spin_min'].set(minuto_atualizado)
+        self.view.controles['var_desabilitar'].set(desabilitar)
         self.view.controles['var_desligar'].set(desligar)
         semanas =  ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
         chk_boxes = carregar_dados['tarefas'][nome_tarefa]['execucao']
@@ -247,15 +240,22 @@ class Funcoes:
         diario = self.view.controles['var_diariamente'].get()
         index = 1
         if diario:
-            print("Marcado")
             for i in range (len(chk_boxes) - 1):
                 self.view.controles[f'chk_{semanas[index]}'].configure(state="disabled")
                 index += 1
         else:
-            print("Desmarcado")
             for i in range (len(chk_boxes) - 1):
                 self.view.controles[f'chk_{semanas[index]}'].configure(state="normal")
                 index += 1
+
+        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
+        pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
+        origem = ""
+        destino = ""
+        for i in range(len(pastas_origem)):
+            origem += f"   {pastas_origem[i]}\n"
+            destino += f"   {pastas_destino[i]}\n"
+        self.view.controles['lbl_pastas'].config(text=f"Pastas origem{8*"-"}\n{origem}\nPastas destino{8*"-"}\n{destino}")
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].get()

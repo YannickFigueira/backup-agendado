@@ -46,6 +46,15 @@ class JanelaPrincipal:
         estilo.LINHA_PAINEL_ESQUERDO += 1
         linha_estendida_moldura_andamento = estilo.LINHA_PAINEL_ESQUERDO
 
+        self.lbl_tamanho = ttk.Label(self.frame_controls, text="Tamanho:", font=estilo.FONTE_VAZIA, anchor="w")
+        self.lbl_tamanho.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO,
+                              sticky="nsew")
+
+        self.lbl_tamanho_exibir = ttk.Label(self.frame_controls, text=(10 * "-"), font=estilo.FONTE_VAZIA, anchor="center")
+        self.lbl_tamanho_exibir.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO,
+                                     sticky="nsew")
+        estilo.LINHA_PAINEL_ESQUERDO += 1
+
         self.btn_executar = ttk.Button(self.frame_controls, text="Executar Tarefa", command="")
         self.btn_executar.grid(row=estilo.LINHA_PAINEL_ESQUERDO, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
         estilo.LINHA_PAINEL_ESQUERDO += 1
@@ -55,14 +64,11 @@ class JanelaPrincipal:
         self.btn_cancelar.config(state="disabled")
         estilo.LINHA_PAINEL_ESQUERDO += 1
 
-        self.lbl_tamanho = ttk.Label(self.frame_controls, text="Tamanho:", font=estilo.FONTE_VAZIA, anchor="w")
-        self.lbl_tamanho.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+
 
         self.controles['linha_painel_esquerdo'] = estilo.LINHA_PAINEL_ESQUERDO
 
-        self.lbl_tamanho_exibir = ttk.Label(self.frame_controls, text=(10*"-"), font=estilo.FONTE_VAZIA, anchor="e")
-        self.lbl_tamanho_exibir.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        estilo.LINHA_PAINEL_ESQUERDO += 1
+
         # Usando o separador customizado
 
         estilo.LINHA_PAINEL_ESQUERDO += 1

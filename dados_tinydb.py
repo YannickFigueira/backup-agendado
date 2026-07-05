@@ -14,9 +14,9 @@ dados_backup = {
     "id_config": "global",
     "tarefas": {
         "tarefa1": {
-            "hora": "10", "minuto": "45",
-            "pastas_origem": ["pasta1", "pasta2"], "pastas_destino": ["pasta1", "pasta2"],
-            "executando": False, "execucao": [True, False, False, False, False, False, False, False],
+            "hora": "17", "minuto": "00",
+            "pastas_origem": ["pasta_origem"], "pastas_destino": ["pasta_destino"],
+            "executando": False, "execucao": [True, True, True, True, True, True, True, True],
             "desligar": False, "desabilitar_tarefa": False,
         }
     }
