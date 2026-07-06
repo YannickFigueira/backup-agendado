@@ -255,7 +255,7 @@ class Funcoes:
         for i in range(len(pastas_origem)):
             origem += f"   {pastas_origem[i]}\n"
             destino += f"   {pastas_destino[i]}\n"
-        self.view.controles['lbl_pastas'].config(text=f"Pastas origem{8*"-"}\n{origem}\nPastas destino{8*"-"}\n{destino}")
+        self.view.controles['lbl_pastas'].config(text=f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].get()

@@ -39,9 +39,6 @@ class JanelaConfiguracao:
         self.frame_checkbox = ttk.Frame(self.janela_configuracao)
         self.frame_checkbox.grid(row=1, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
 
-        self.frame_alterar = ttk.Frame(self.janela_configuracao)
-        self.frame_alterar.grid(row=2, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
-
         ## Controles do painel campos
         linha_campo = 0
         """
@@ -188,9 +185,7 @@ class JanelaConfiguracao:
         )
         self.moldura_pastas = ttk.Frame(self.frame_checkbox, relief="solid", borderwidth=1, padding=10)
         self.moldura_pastas.grid(row=linha_check, column=0,
-                                          columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
-        #self.moldura_andamento_atual.grid_propagate(False)
-        #self.moldura_andamento_atual.pack_propagate(False)
+                                          columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
 
         self.lbl_pastas = ttk.Label(
             self.moldura_pastas,
