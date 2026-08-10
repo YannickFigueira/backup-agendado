@@ -44,15 +44,6 @@ class JanelaConfiguracao:
         ## Controles do painel campos
         linha_campo = 0
 
-        self.txt_destino = ttk.Entry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
-        self.txt_destino.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO)
-        self.controles['txt_destino'] = self.txt_destino
-
-        self.btn_selecionar_destino = ttk.Button(self.frame_campos, text="...", style="Fonte.TButton")
-        self.btn_selecionar_destino.grid(row=linha_campo, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO)
-        self.controles['btn_selecionar_destino'] = self.btn_selecionar_destino
-        linha_campo += 1
-        """
         self.lbl_selecao = ttk.Label(self.frame_campos, text="Selecionar:", font=estilo.FONTE_ARIAL)
         self.lbl_selecao.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
