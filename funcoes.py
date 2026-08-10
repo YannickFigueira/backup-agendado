@@ -45,6 +45,10 @@ elif platform.system() == 'Windows':
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
 agora = datetime.now()
 hora_formatada = agora.strftime("%H:%M:%S")
+#index = 0
+pasta_origem = []
+pasta_destino = []
+editando = False
 
 # --- Funções de controle geral ---
 def selecionar_pasta():
