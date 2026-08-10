@@ -11,6 +11,36 @@ from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
 
+# --- Registro de erros ---
+arquivo_erro = estilo.ARQUIVO_ERRO
+# Pastas de configuração Linux
+home_dir = os.path.expanduser('~')
+log_dir = f"{home_dir}/log"
+programa_dir = f"{home_dir}/.backup agendado"
+notas = f"{home_dir}/.backup agendado/notas"
+
+if not os.path.exists(programa_dir):
+    os.mkdir(programa_dir)
+# Pastas de configuração Windows
+
+if platform.system() == 'Linux':
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    logging.basicConfig(
+        filename=f"{home_dir}/log/{arquivo_erro}",        # nome do arquivo
+        level=logging.ERROR,         # nível de log
+        format="%(asctime)s - %(levelname)s - %(message)s")
+
+elif platform.system() == 'Windows':
+    if not os.path.exists(f"c:/temp"):
+        os.mkdir(f"c:/temp")
+
+    logging.basicConfig(
+        filename=f"c:/temp/{arquivo_erro}",  # nome do arquivo
+        level=logging.ERROR,  # nível de log
+        format="%(asctime)s - %(levelname)s - %(message)s")
+
 # --- Inicialização de variáveis ---
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
 agora = datetime.now()
