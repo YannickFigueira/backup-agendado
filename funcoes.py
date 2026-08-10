@@ -1,3 +1,5 @@
+import logging
+import os
 import platform
 import re
 import subprocess
@@ -210,6 +212,20 @@ class Funcoes:
                                                        command=lambda: self.abrir_nova_tarefa())
         self.view.controles['barra_menu'].add_command(label="Alterar Pastas")
 
+    # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
+    def _vincular_logs_backup(self):
+        pass
+
+    # --- LÓGICA DA JANELA DE NOVA TAREFA ---
+    def _vincular_nova_tarefa(self):
+        # --- Controles da janela Nova Tarefa ---
+        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
+        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_pastas())
+        self.view.controles['btn_salvar'].config(command=lambda: self.gravar_pastas())
+        pass
+
+    # --- Funcionalidade geral ---
     # Ações da janela
     def selecionar_origem(self):
         self.view.controles['txt_origem'].delete(0, "end")
@@ -218,10 +234,6 @@ class Funcoes:
     def selecionar_destino(self):
         self.view.controles['txt_destino'].delete(0, "end")
         self.view.controles['txt_destino'].insert(0, selecionar_pasta())
-
-    # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
-    def _vincular_logs_backup(self):
-        pass
 
     # --- Funções das janelas ---
     def abrir_configuracoes(self, janela_principal):
@@ -238,12 +250,16 @@ class Funcoes:
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
 
-    def abrir_nova_tarefa(self, janela_principal):
+    def abrir_nova_tarefa(self):
         # 1. Cria a parte visual
-        visual = JanelaNovaTarefa(self.view.controles['janela_principal'])
+        visual = JanelaNovaTarefa(self.view.controles['janela_configuracao'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+        logica.view.controles['janela_nova_tarefa'].wait_window()
+        # 3. Atualiza os valores do Combobox
+        self.atualizar_configuracao()
+
 
     # --- Funções da Janela Principal ---
     def atualizar_horario(self, event = None):
@@ -254,44 +270,62 @@ class Funcoes:
 
     # --- Funções da Janela Configurações ---
     def habilitar_edicao(self):
-        print("Edição habilitada")
+        #print("Edição habilitada")
+        editando = True
 
     def atualizar_configuracao(self, event = None):
-        nome_tarefa = self.view.controles['cmb_selecao'].get()
-        self.view.controles['txt_tarefa'].delete(0, "end")
-        self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
-        hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
-        minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
-        desabilitar = carregar_dados['tarefas'][nome_tarefa]['desabilitar_tarefa']
-        desligar = carregar_dados['tarefas'][nome_tarefa]['desligar']
-        self.view.controles['spin_hora'].set(hora_atualizada)
-        self.view.controles['spin_min'].set(minuto_atualizado)
-        self.view.controles['var_desabilitar'].set(desabilitar)
-        self.view.controles['var_desligar'].set(desligar)
-        semanas =  ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
-        chk_boxes = carregar_dados['tarefas'][nome_tarefa]['execucao']
-        for i in range(len(chk_boxes)):
-            self.view.controles[f'var_{semanas[i]}'].set(chk_boxes[i])
+        if not editando:
+            nome_tarefa = self.view.controles['cmb_selecao'].get()
+            self.view.controles['txt_tarefa'].delete(0, "end")
+            self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
+            hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
+            minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
+            desabilitar = carregar_dados['tarefas'][nome_tarefa]['desabilitar_tarefa']
+            desligar = carregar_dados['tarefas'][nome_tarefa]['desligar']
+            self.view.controles['spin_hora'].set(hora_atualizada)
+            self.view.controles['spin_min'].set(minuto_atualizado)
+            self.view.controles['var_desabilitar'].set(desabilitar)
+            self.view.controles['var_desligar'].set(desligar)
+            semanas =  ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+            chk_boxes = carregar_dados['tarefas'][nome_tarefa]['execucao']
+            for i in range(len(chk_boxes)):
+                self.view.controles[f'var_{semanas[i]}'].set(chk_boxes[i])
 
-        diario = self.view.controles['var_diariamente'].get()
-        index = 1
-        if diario:
-            for i in range (len(chk_boxes) - 1):
-                self.view.controles[f'chk_{semanas[index]}'].configure(state="disabled")
-                index += 1
+            diario = self.view.controles['var_diariamente'].get()
+            index = 1
+            if diario:
+                for i in range (len(chk_boxes) - 1):
+                    self.view.controles[f'chk_{semanas[index]}'].configure(state="disabled")
+                    index += 1
+            else:
+                for i in range (len(chk_boxes) - 1):
+                    self.view.controles[f'chk_{semanas[index]}'].configure(state="normal")
+                    index += 1
+
+            pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
+            pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
+            origem = ""
+            destino = ""
+            for i in range(len(pastas_origem)):
+                origem += f"   {pastas_origem[i]}\n"
+                destino += f"   {pastas_destino[i]}\n"
+            self.view.controles['lbl_pastas'].config(text=f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
         else:
-            for i in range (len(chk_boxes) - 1):
-                self.view.controles[f'chk_{semanas[index]}'].configure(state="normal")
-                index += 1
+            # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
+            valores_atuais = list(self.view.controles['cmb_selecao']['values'])
 
-        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
-        pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
-        origem = ""
-        destino = ""
-        for i in range(len(pastas_origem)):
-            origem += f"   {pastas_origem[i]}\n"
-            destino += f"   {pastas_destino[i]}\n"
-        self.view.controles['lbl_pastas'].config(text=f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
+            # 2. Adiciona o novo item
+            nova_tarefa = f"tarefa{len(valores_atuais)}"
+            for valor in valores_atuais:
+                print("Verificando...")
+                if valor == nova_tarefa:
+                    print("Verificado")
+
+            valores_atuais.append(nova_tarefa)
+            self.view.controles['cmb_selecao']['values'] = valores_atuais
+            self.view.controles['cmb_selecao'].current(len(valores_atuais) - 1)
+            self.view.controles['txt_tarefa'].delete(0, "end")
+            self.view.controles['txt_tarefa'].insert(0, "teste")
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].get()
@@ -311,3 +345,28 @@ class Funcoes:
                 self.view.controles[f'chk_{dia}'].configure(state="normal")
                 # 2. Atualiza o valor da variável original correspondente para False (desmarcado)
                 self.view.controles[f'var_{dia}'].set(False)
+
+    def adicionar_pastas(self):
+
+        if self.view.controles['txt_origem'].get() != "":
+            if self.view.controles['txt_destino'].get() != "":
+                origem = self.view.controles['txt_origem'].get().strip().replace("\\","/")
+                pasta_origem.append(origem)
+                # Extrai o nome da última pasta ("Development")
+                nome_pasta = os.path.basename(origem.rstrip("/"))
+                pasta_destino.append(f"{os.path.join(self.view.controles['txt_destino'].get().strip().replace("\\", " / "), nome_pasta)}")
+
+                self.view.controles['txt_origem'].delete(0, "end")
+                #self.view.controles['txt_destino'].delete(0, "end")
+        else:
+            messagebox.showinfo("Aviso", "Selecione uma pasta")
+
+    def gravar_pastas(self):
+        global editando
+        self.view.controles['txt_destino'].delete(0, "end")
+        for i, caminho in enumerate(pasta_origem):
+            print(f"Índice {i}: {caminho}")
+        for i, caminho in enumerate(pasta_destino):
+            print(f"indice {i}: {caminho}")
+        editando = True
+        self.view.controles['janela_nova_tarefa'].destroy()
