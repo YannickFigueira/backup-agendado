@@ -151,6 +151,8 @@ class Funcoes:
                 self._vincular_configuracoes()
             elif view.nome_janela == "log-backup":
                 self._vincular_logs_backup()
+            elif view.nome_janela == "nova-tarefa":
+                self._vincular_nova_tarefa()
 
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
