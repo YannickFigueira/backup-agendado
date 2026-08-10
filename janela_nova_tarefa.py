@@ -11,5 +11,5 @@ class JanelaNovaTarefa:
         # Garante que esta janela apareça SEMPRE por cima da principal
         self.janela_nova_tarefa.transient(janela)
 
-        self.nome_janela = "nova_tarefa"  # <-- Identificador para o controlador
+        self.nome_janela = "nova-tarefa"  # <-- Identificador para o controlador
         self.controles = {}
