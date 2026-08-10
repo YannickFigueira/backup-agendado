@@ -207,7 +207,7 @@ class Funcoes:
 
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
-                                                       command=lambda: self.habilitar_edicao())
+                                                       command=lambda: self.abrir_nova_tarefa())
         self.view.controles['barra_menu'].add_command(label="Alterar Pastas")
 
     # Ações da janela
