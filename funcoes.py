@@ -136,6 +136,27 @@ def abrir_logs():
     else:
         print("Sistema não suportado")
 
+
+def verificar_tarefas_existentes(valores_atuais):
+    nova_tarefa = "tarefa"
+
+    # 1. Filtra APENAS os números das strings que começam estritamente com 'tarefa' seguido de dígitos
+    numeros_usados = set()
+    for item in valores_atuais:
+        match = re.match(r"^tarefa(\d+)$", str(item).strip())
+        if match:
+            numeros_usados.add(int(match.group(1)))
+    # 'numeros_usados' agora é um conjunto com inteiros: {1, 2, 3, 5}
+    # O item 'usuario' e 'configuracoes' são totalmente ignorados sem causar erros.
+
+    # 2. Encontra o menor número vago a partir do 1
+    proximo_indice = 1
+    while proximo_indice in numeros_usados:
+        proximo_indice += 1
+
+    return f"{nova_tarefa}{proximo_indice}"
+
+
 class Funcoes:
     def __init__(self, view):
         self.view = view
@@ -206,6 +227,7 @@ class Funcoes:
         #self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_configuracao)
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
+        self.view.controles['btn_gravar'].config(command=lambda: self.gravar_nova_tarefa())
 
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
@@ -315,17 +337,20 @@ class Funcoes:
             valores_atuais = list(self.view.controles['cmb_selecao']['values'])
 
             # 2. Adiciona o novo item
-            nova_tarefa = f"tarefa{len(valores_atuais)}"
-            for valor in valores_atuais:
-                print("Verificando...")
-                if valor == nova_tarefa:
-                    print("Verificado")
+            nova_tarefa = verificar_tarefas_existentes(valores_atuais)
 
             valores_atuais.append(nova_tarefa)
             self.view.controles['cmb_selecao']['values'] = valores_atuais
             self.view.controles['cmb_selecao'].current(len(valores_atuais) - 1)
+            self.view.controles['cmb_selecao'].config(state="disabled")
             self.view.controles['txt_tarefa'].delete(0, "end")
-            self.view.controles['txt_tarefa'].insert(0, "teste")
+            self.view.controles['txt_tarefa'].insert(0, nova_tarefa)
+            self.view.controles['spin_hora'].set("17")
+            self.view.controles['spin_min'].set("00")
+            self.view.controles['var_diariamente'].set(True)
+            self.atualizar_checkbox()
+            self.view.controles['var_desabilitar'].set(False)
+            self.view.controles['var_desligar'].set(False)
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].get()
@@ -357,16 +382,29 @@ class Funcoes:
                 pasta_destino.append(f"{os.path.join(self.view.controles['txt_destino'].get().strip().replace("\\", " / "), nome_pasta)}")
 
                 self.view.controles['txt_origem'].delete(0, "end")
+                self.view.controles['btn_salvar'].config(state="normal")
                 #self.view.controles['txt_destino'].delete(0, "end")
+            else:
+                messagebox.showinfo("Aviso", "Selecione uma pasta de destino")
+                self.view.controles['txt_destino'].focus_set()
         else:
-            messagebox.showinfo("Aviso", "Selecione uma pasta")
+            messagebox.showinfo("Aviso", "Selecione uma pasta de origem")
+            self.view.controles['txt_origem'].focus_set()
 
     def gravar_pastas(self):
+        if len(pasta_origem) != 0:
+            global editando
+            self.view.controles['txt_destino'].delete(0, "end")
+            for i, caminho in enumerate(pasta_origem):
+                print(f"Índice {i}: {caminho}")
+            for i, caminho in enumerate(pasta_destino):
+                print(f"indice {i}: {caminho}")
+            editando = True
+            self.view.controles['janela_nova_tarefa'].destroy()
+        else:
+            messagebox.showinfo("Aviso", "Adicione ao menos uma pasta")
+
+    def gravar_nova_tarefa(self):
         global editando
-        self.view.controles['txt_destino'].delete(0, "end")
-        for i, caminho in enumerate(pasta_origem):
-            print(f"Índice {i}: {caminho}")
-        for i, caminho in enumerate(pasta_destino):
-            print(f"indice {i}: {caminho}")
-        editando = True
-        self.view.controles['janela_nova_tarefa'].destroy()
+        editando = False
+        self.view.controles['cmb_selecao'].config(state="readonly")

@@ -63,4 +63,5 @@ class JanelaNovaTarefa:
         self.btn_salvar = ttk.Button(self.frame_campos, text="Salvar pastas",
                                      style="Fonte.TButton")
         self.btn_salvar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.btn_salvar.config(state="disabled")
         self.controles['btn_salvar'] = self.btn_salvar

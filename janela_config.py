@@ -152,6 +152,7 @@ class JanelaConfiguracao:
         largura_botao = 20
         self.btn_gravar = ttk.Button(self.frame_checkbox, width=largura_botao, text="Gravar Tarefa", style="Fonte.TButton")
         self.btn_gravar.grid(row=0, rowspan=5, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['btn_gravar'] = self.btn_gravar
 
         # Texto de exemplo
         texto_longo = (
