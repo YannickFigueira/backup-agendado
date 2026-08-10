@@ -43,22 +43,6 @@ class JanelaConfiguracao:
 
         ## Controles do painel campos
         linha_campo = 0
-        """
-        self.lbl_origem = ttk.Label(self.frame_campos, text="Origem:", font=estilo.FONTE_ARIAL)
-        self.lbl_origem.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
-
-        largura_texto = 30
-        self.txt_origem = ttk.Entry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
-        self.txt_origem.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO)
-        self.controles['txt_origem'] = self.txt_origem
-
-        self.btn_selecionar_origem = ttk.Button(self.frame_campos, text="...", style="Fonte.TButton")
-        self.btn_selecionar_origem.grid(row=linha_campo, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO)
-        self.controles['btn_selecionar_origem'] = self.btn_selecionar_origem
-        linha_campo += 1
-
-        self.lbl_destino = ttk.Label(self.frame_campos, text="Destino:", font=estilo.FONTE_ARIAL)
-        self.lbl_destino.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
         self.txt_destino = ttk.Entry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
         self.txt_destino.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO)
