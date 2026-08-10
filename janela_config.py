@@ -29,6 +29,8 @@ class JanelaConfiguracao:
         self._criar_barra_menu()
 
     def _criar_layout(self):
+        # --- Controle da janela ---
+        self.controles['janela_configuracao'] = self.janela_configuracao
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
         self.janela_configuracao.grab_set()
 
