@@ -51,6 +51,7 @@ hora_formatada = agora.strftime("%H:%M:%S")
 pasta_origem = []
 pasta_destino = []
 editando = False
+atualizado_pastas = False
 
 # --- Funções de controle geral ---
 def selecionar_pasta():
@@ -227,7 +228,7 @@ class Funcoes:
         #self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_configuracao)
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
-        self.view.controles['btn_gravar'].config(command=lambda: self.gravar_nova_tarefa())
+        self.view.controles['btn_gravar'].config(command=lambda: self.gravar_tarefa())
 
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
@@ -392,45 +393,56 @@ class Funcoes:
             self.view.controles['txt_origem'].focus_set()
 
     def gravar_pastas(self):
+        global editando, atualizado_pastas
         if len(pasta_origem) != 0:
-            global editando
+            atualizado_pastas = True
             self.view.controles['txt_destino'].delete(0, "end")
+
             for i, caminho in enumerate(pasta_origem):
                 print(f"Índice {i}: {caminho}")
             for i, caminho in enumerate(pasta_destino):
                 print(f"indice {i}: {caminho}")
+
             editando = True
             self.view.controles['janela_nova_tarefa'].destroy()
         else:
             messagebox.showinfo("Aviso", "Adicione ao menos uma pasta")
 
-    def gravar_nova_tarefa(self):
-        global editando
-        editando = False
-        self.view.controles['cmb_selecao'].config(state="readonly")
-        tarefa = self.view.controles['txt_tarefa'].get().strip()
-        hora = self.view.controles['spin_hora'].get()
-        minuto = self.view.controles['spin_min'].get()
-        desabilitar = self.view.controles['var_desabilitar'].get()
-        desligar = self.view.controles['var_desligar'].get()
+    def gravar_tarefa(self):
+        # Novos dados
+        global editando, atualizado_pastas, pasta_origem, pasta_destino
+        if not atualizado_pastas:
+            pasta_origem = []
+            pasta_destino = []
+            editando = False
 
-        semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
-        diario = self.view.controles['var_diariamente'].get()
-        index = 0
-        execusao = []
-        if diario:
-            execusao = ",".join([f" {True}" for i in range(0, len(semanas))])
-        else:
-            for i in range(len(semanas)):
-                execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
-                index += 1
+        if editando:
+            self.view.controles['cmb_selecao'].config(state="readonly")
+            tarefa = self.view.controles['txt_tarefa'].get().strip()
+            hora = self.view.controles['spin_hora'].get()
+            minuto = self.view.controles['spin_min'].get()
+            desabilitar = self.view.controles['var_desabilitar'].get()
+            desligar = self.view.controles['var_desligar'].get()
 
-        # Verificar dados
-        print(f"Iniciio - {tarefa}")
-        print(hora)
-        print(minuto)
-        print(desabilitar)
-        print(desligar)
-        print(execusao)
-        print(pasta_origem)
-        print(pasta_destino)
+            semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+            diario = self.view.controles['var_diariamente'].get()
+            index = 0
+            execusao = []
+            if diario:
+                execusao = ",".join([f" {True}" for i in range(0, len(semanas))])
+            else:
+                for i in range(len(semanas)):
+                    execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
+                    index += 1
+
+            # Verificar dados
+            print(f"Iniciio - {tarefa}")
+            print(hora)
+            print(minuto)
+            print(desabilitar)
+            print(desligar)
+            print(execusao)
+            print(pasta_origem)
+            print(pasta_destino)
+            editando = False
+        # Atualizar dados
