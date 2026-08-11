@@ -260,11 +260,22 @@ class Funcoes:
 
     # --- Funções das janelas ---
     def abrir_configuracoes(self, janela_principal):
+        global editando
         # 1. Cria a parte visual
         visual = JanelaConfiguracao(self.view.controles['janela_principal'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+
+        qtd_origem = len(self.view.controles['cmb_selecao']['values'])
+        qtd_destino = len(logica.view.controles['cmb_selecao']['values'])
+        if qtd_origem < qtd_destino:
+            logica.view.controles['cmb_selecao'].config(state="readonly")
+            lista_nomes = list(carregar_dados['tarefas'].keys())
+            logica.view.controles['cmb_selecao'].config(values=list(lista_nomes))
+            logica.view.controles['cmb_selecao'].current(0)
+            editando = False
+            logica.atualizar_configuracao()
 
     def abrir_logs_backup(self, janela_principal):
         # 1. Cria a parte visual
