@@ -277,23 +277,30 @@ class Funcoes:
             editando = False
             logica.atualizar_configuracao()
 
+    def abrir_nova_tarefa(self):
+        global pasta_origem, pasta_destino
+        # 1. Cria a parte visual
+        visual = JanelaNovaTarefa(self.view.controles['janela_configuracao'])
+
+        # 2. Cria a lógica e passa a visão para ela controlar
+        logica = Funcoes(visual)
+        if len(pasta_origem) > 0:
+            pasta_origem = []
+            pasta_destino = []
+
+        logica.view.controles['janela_nova_tarefa'].wait_window()
+        if atualizado_pastas:
+            self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="disabled")
+            self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
+        # 3. Atualiza os valores do Combobox
+        self.atualizar_configuracao()
+
     def abrir_logs_backup(self, janela_principal):
         # 1. Cria a parte visual
         visual = JanelaLogsBackup(self.view.controles['janela_principal'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
-
-    def abrir_nova_tarefa(self):
-        # 1. Cria a parte visual
-        visual = JanelaNovaTarefa(self.view.controles['janela_configuracao'])
-
-        # 2. Cria a lógica e passa a visão para ela controlar
-        logica = Funcoes(visual)
-        logica.view.controles['janela_nova_tarefa'].wait_window()
-        # 3. Atualiza os valores do Combobox
-        self.atualizar_configuracao()
-
 
     # --- Funções da Janela Principal ---
     def atualizar_horario(self, event = None):
@@ -457,3 +464,6 @@ class Funcoes:
             print(pasta_destino)
             editando = False
         # Atualizar dados
+        self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")
+        self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
+        atualizado_pastas = False
