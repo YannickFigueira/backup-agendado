@@ -439,29 +439,28 @@ class Funcoes:
             tarefa = self.view.controles['txt_tarefa'].get().strip()
             hora = self.view.controles['spin_hora'].get()
             minuto = self.view.controles['spin_min'].get()
-            desabilitar = self.view.controles['var_desabilitar'].get()
-            desligar = self.view.controles['var_desligar'].get()
-
             semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
             diario = self.view.controles['var_diariamente'].get()
             index = 0
             execusao = []
             if diario:
-                execusao = ",".join([f" {True}" for i in range(0, len(semanas))])
+                execusao = [True] * len(semanas)
             else:
                 for i in range(len(semanas)):
                     execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
                     index += 1
+            desligar = self.view.controles['var_desligar'].get()
+            desabilitar = self.view.controles['var_desabilitar'].get()
+
+
+
 
             # Verificar dados
-            print(f"Iniciio - {tarefa}")
-            print(hora)
-            print(minuto)
-            print(desabilitar)
-            print(desligar)
-            print(execusao)
-            print(pasta_origem)
-            print(pasta_destino)
+            print(f"Inicio - {tarefa}")
+            dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
+            dados_tinydb.gravar_nova_tarefa(tarefa, dados)
+
+
             editando = False
         # Atualizar dados
         self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")

@@ -28,7 +28,11 @@ if not tabela_config.all():
 
 # --- FUNÇÃO PRINCIPAL DE MANIPULAÇÃO ---
 # --- GRAVAR OS DADOS ---
-def gravar_nova_tarefa(nome_tarefa):
+def gravar_nova_tarefa(nome_tarefa, dados):
+    print(f"Gravando tarefa: {nome_tarefa}")
+    for dado in dados:
+        print(dado)
+
     # 1. Busca o estado mais recente do banco
     config_atual = tabela_config.search(Config.id_config == "global")[0]
 
@@ -39,14 +43,14 @@ def gravar_nova_tarefa(nome_tarefa):
 
     # 3. Define a estrutura com os valores padrão para a nova tarefa
     config_atual['tarefas'][nome_tarefa] = {
-        "hora": "00",
-        "minuto": "00",
-        "pastas_origem": [],
-        "pastas_destino": [],
+        "hora": f"{dados[0]}",
+        "minuto": f"{dados[1]}",
+        "pastas_origem": dados[2],
+        "pastas_destino": dados[3],
         "executando": False,
-        "execucao": [False, False, False, False, False, False, False, False],
-        "desligar": False,
-        "desabilitar_tarefa": False,
+        "execucao": dados[4],
+        "desligar": dados[5],
+        "desabilitar_tarefa": dados[6],
     }
 
     # 4. Salva de volta no TinyDB
