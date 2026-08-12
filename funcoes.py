@@ -9,6 +9,7 @@ from datetime import datetime
 
 import estilo
 import verificarversao, dados_tinydb
+from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
@@ -55,6 +56,7 @@ nova_tarefa_gravada = False
 # Verificar janelas
 configuracao_aberta = False
 nova_tarefa_aberta = False
+alterar_pasta_aberta = False
 
 # --- Funções de controle geral ---
 def selecionar_pasta():
@@ -180,6 +182,8 @@ class Funcoes:
                 self._vincular_logs_backup()
             elif view.nome_janela == "nova-tarefa":
                 self._vincular_nova_tarefa()
+            elif view.nome_janela == "alterar-pastas":
+                self._vincular_alterar_pastas()
 
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
@@ -237,7 +241,8 @@ class Funcoes:
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
                                                        command=lambda: self.abrir_nova_tarefa())
-        self.view.controles['barra_menu'].add_command(label="Alterar Pastas")
+        self.view.controles['barra_menu'].add_command(label="Alterar Pastas",
+                                                      command=lambda: self.abrir_alterar_pastas())
 
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
@@ -249,7 +254,13 @@ class Funcoes:
         self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_pastas())
         self.view.controles['btn_salvar'].config(command=lambda: self.gravar_pastas())
 
-    # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
+    # --- LÓGICA DA JANELA ALTERAR PASTAS ---
+    def _vincular_alterar_pastas(self):
+        # --- Controles da janela Alterar Pastas ---
+        self.view.controles['janela_alterar_pastas'].protocol("WM_DELETE_WINDOW",
+                                                           lambda: self.fechar_janelas('janela_alterar_pastas'))
+
+    # --- LÓGICA DA JANELA DE LOGS ---
     def _vincular_logs_backup(self):
         pass
 
@@ -309,6 +320,17 @@ class Funcoes:
             self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
         # 3. Atualiza os valores do Combobox
         self.atualizar_configuracao()
+    def abrir_alterar_pastas(self):
+        global alterar_pasta_aberta
+        alterar_pasta_aberta = True
+        # 1. Cria a parte visual
+        visual = JanelaAlterarPastas(self.view.controles['janela_configuracao'])
+
+        # 2. Cria a lógica e passa a visão para ela controlar
+        logica = Funcoes(visual)
+
+        logica.view.controles['janela_alterar_pastas'].wait_window()
+        alterar_pasta_aberta = False
 
     def abrir_logs_backup(self, janela_principal):
         # 1. Cria a parte visual
@@ -325,7 +347,7 @@ class Funcoes:
                 if configuracao_aberta:
                     return
             case 'janela_configuracao':
-                if nova_tarefa_aberta:
+                if nova_tarefa_aberta or alterar_pasta_aberta:
                     return
 
         self.view.controles[f'{janela}'].destroy()
@@ -338,10 +360,6 @@ class Funcoes:
         self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
 
     # --- Funções da Janela Configurações ---
-    def habilitar_edicao(self):
-        #print("Edição habilitada")
-        editando = True
-
     def atualizar_configuracao(self, event = None):
         if not editando:
             nome_tarefa = self.view.controles['cmb_selecao'].get()
