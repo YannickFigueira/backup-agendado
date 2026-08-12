@@ -47,11 +47,14 @@ elif platform.system() == 'Windows':
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
 agora = datetime.now()
 hora_formatada = agora.strftime("%H:%M:%S")
-#index = 0
 pasta_origem = []
 pasta_destino = []
 editando = False
 atualizado_pastas = False
+nova_tarefa_gravada = False
+# Verificar janelas
+configuracao_aberta = False
+nova_tarefa_aberta = False
 
 # --- Funções de controle geral ---
 def selecionar_pasta():
@@ -193,7 +196,7 @@ class Funcoes:
         # --- Controle do Menu ---
         # -- Menu Arquivo --
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
-                                    command=lambda: self.abrir_configuracoes(self.view.controles['janela_principal']))
+                                    command=lambda: self.abrir_configuracoes())
         self.view.controles['menu_arquivo'].add_command(label="Logs",
                                     command=lambda: self.abrir_logs_backup(self.view.controles['janela_principal']))
         # Mudar comado para withdraw
@@ -208,6 +211,7 @@ class Funcoes:
         self.view.controles['menu_ajuda'].add_command(label="Sobre", command=lambda: visitar_site())
 
         # --- Controle da Janela Principal ---
+        self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.fechar_janelas('janela_principal'))
         criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
@@ -224,8 +228,8 @@ class Funcoes:
         self.atualizar_configuracao()
 
         # --- Controles da Janela Configurações ---
-        #self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
-        #self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        self.view.controles['janela_configuracao'].protocol("WM_DELETE_WINDOW",
+                                                         lambda: self.fechar_janelas('janela_configuracao'))
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_configuracao)
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
         self.view.controles['btn_gravar'].config(command=lambda: self.gravar_tarefa())
@@ -235,17 +239,18 @@ class Funcoes:
                                                        command=lambda: self.abrir_nova_tarefa())
         self.view.controles['barra_menu'].add_command(label="Alterar Pastas")
 
-    # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
-    def _vincular_logs_backup(self):
-        pass
-
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
         # --- Controles da janela Nova Tarefa ---
+        self.view.controles['janela_nova_tarefa'].protocol("WM_DELETE_WINDOW",
+                                                            lambda: self.fechar_janelas('janela_nova_tarefa'))
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
         self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_pastas())
         self.view.controles['btn_salvar'].config(command=lambda: self.gravar_pastas())
+
+    # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
+    def _vincular_logs_backup(self):
         pass
 
     # --- Funcionalidade geral ---
@@ -259,8 +264,9 @@ class Funcoes:
         self.view.controles['txt_destino'].insert(0, selecionar_pasta())
 
     # --- Funções das janelas ---
-    def abrir_configuracoes(self, janela_principal):
-        global editando
+    def abrir_configuracoes(self):
+        global editando, nova_tarefa_gravada, configuracao_aberta
+        configuracao_aberta = True
         # 1. Cria a parte visual
         visual = JanelaConfiguracao(self.view.controles['janela_principal'])
 
@@ -277,8 +283,16 @@ class Funcoes:
             editando = False
             logica.atualizar_configuracao()
 
+        logica.view.controles['janela_configuracao'].wait_window()
+        configuracao_aberta = False
+        if nova_tarefa_gravada:
+            lista_nomes = list(carregar_dados['tarefas'].keys())
+            self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
+            nova_tarefa_gravada = False
+
     def abrir_nova_tarefa(self):
-        global pasta_origem, pasta_destino
+        global pasta_origem, pasta_destino, nova_tarefa_aberta
+        nova_tarefa_aberta = True
         # 1. Cria a parte visual
         visual = JanelaNovaTarefa(self.view.controles['janela_configuracao'])
 
@@ -289,6 +303,7 @@ class Funcoes:
             pasta_destino = []
 
         logica.view.controles['janela_nova_tarefa'].wait_window()
+        nova_tarefa_aberta = False
         if atualizado_pastas:
             self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="disabled")
             self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
@@ -301,6 +316,19 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+
+    def fechar_janelas(self, janela):
+        global configuracao_aberta, nova_tarefa_aberta
+
+        match janela:
+            case 'janela_principal':
+                if configuracao_aberta:
+                    return
+            case 'janela_configuracao':
+                if nova_tarefa_aberta:
+                    return
+
+        self.view.controles[f'{janela}'].destroy()
 
     # --- Funções da Janela Principal ---
     def atualizar_horario(self, event = None):
@@ -390,6 +418,54 @@ class Funcoes:
                 # 2. Atualiza o valor da variável original correspondente para False (desmarcado)
                 self.view.controles[f'var_{dia}'].set(False)
 
+    def gravar_tarefa(self):
+        # Novos dados
+        global editando, atualizado_pastas, pasta_origem, pasta_destino, nova_tarefa_gravada
+        if not atualizado_pastas:
+            pasta_origem = []
+            pasta_destino = []
+            editando = False
+
+        if editando:
+            self.view.controles['cmb_selecao'].config(state="readonly")
+            tarefa = self.view.controles['txt_tarefa'].get().strip()
+            hora = self.view.controles['spin_hora'].get()
+            minuto = self.view.controles['spin_min'].get()
+            semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+            diario = self.view.controles['var_diariamente'].get()
+            index = 0
+            execusao = []
+            if diario:
+                execusao = [True] * len(semanas)
+            else:
+                for i in range(len(semanas)):
+                    execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
+                    index += 1
+            desligar = self.view.controles['var_desligar'].get()
+            desabilitar = self.view.controles['var_desabilitar'].get()
+
+
+
+
+            # Verificar dados
+            print(f"Inicio - {tarefa}")
+            dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
+            dados_tinydb.gravar_nova_tarefa(tarefa, dados)
+
+
+            editando = False
+            atualizado_pastas = False
+            nova_tarefa_gravada = True
+
+            lista_nomes = list(carregar_dados['tarefas'].keys())
+            self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
+            self.view.controles['cmb_selecao'].current(0)
+        # Atualizar dados
+        self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")
+        self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
+
+
+    # --- Funções da janela Nova tarefa ---
     def adicionar_pastas(self):
 
         if self.view.controles['txt_origem'].get() != "":
@@ -425,44 +501,3 @@ class Funcoes:
             self.view.controles['janela_nova_tarefa'].destroy()
         else:
             messagebox.showinfo("Aviso", "Adicione ao menos uma pasta")
-
-    def gravar_tarefa(self):
-        # Novos dados
-        global editando, atualizado_pastas, pasta_origem, pasta_destino
-        if not atualizado_pastas:
-            pasta_origem = []
-            pasta_destino = []
-            editando = False
-
-        if editando:
-            self.view.controles['cmb_selecao'].config(state="readonly")
-            tarefa = self.view.controles['txt_tarefa'].get().strip()
-            hora = self.view.controles['spin_hora'].get()
-            minuto = self.view.controles['spin_min'].get()
-            semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
-            diario = self.view.controles['var_diariamente'].get()
-            index = 0
-            execusao = []
-            if diario:
-                execusao = [True] * len(semanas)
-            else:
-                for i in range(len(semanas)):
-                    execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
-                    index += 1
-            desligar = self.view.controles['var_desligar'].get()
-            desabilitar = self.view.controles['var_desabilitar'].get()
-
-
-
-
-            # Verificar dados
-            print(f"Inicio - {tarefa}")
-            dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
-            dados_tinydb.gravar_nova_tarefa(tarefa, dados)
-
-
-            editando = False
-        # Atualizar dados
-        self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")
-        self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
-        atualizado_pastas = False

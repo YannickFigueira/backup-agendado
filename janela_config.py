@@ -34,6 +34,14 @@ class JanelaConfiguracao:
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
         self.janela_configuracao.grab_set()
 
+        # 3. Intercepta o clique no botão 'X' de fechar a Toplevel
+        def ao_fechar():
+            # Libera o bloqueio antes de destruir
+            self.janela_configuracao.grab_release()
+            self.janela_configuracao.destroy()
+
+        self.janela_configuracao.protocol("WM_DELETE_WINDOW", ao_fechar)
+
         ## Painel da janela
         self.frame_campos = ttk.Frame(self.janela_configuracao)
         self.frame_campos.grid(row=0, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
