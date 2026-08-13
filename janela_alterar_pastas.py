@@ -63,14 +63,7 @@ class JanelaAlterarPastas:
         self.controles['btn_selecionar_destino'] = self.btn_selecionar_destino
         linha_campo += 1
 
-        self.btn_adicionar = ttk.Button(self.frame_campos, text="Adicionar nova pasta",
+        self.btn_alterar = ttk.Button(self.frame_campos, text="Alterar pasta",
                                      style="Fonte.TButton")
-        self.btn_adicionar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.controles['btn_adicionar'] = self.btn_adicionar
-        linha_campo += 1
-
-        self.btn_salvar = ttk.Button(self.frame_campos, text="Salvar pastas",
-                                     style="Fonte.TButton")
-        self.btn_salvar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.btn_salvar.config(state="disabled")
-        self.controles['btn_salvar'] = self.btn_salvar
+        self.btn_alterar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['btn_alterar'] = self.btn_alterar
