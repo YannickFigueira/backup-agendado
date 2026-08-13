@@ -7,12 +7,15 @@ import subprocess
 from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
 
+from click import command
+
 import estilo
 import verificarversao, dados_tinydb
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
+from janela_excluir_tarefa import JanelaExcluirTarefa
 
 # --- Registro de erros ---
 arquivo_erro = estilo.ARQUIVO_ERRO
@@ -61,6 +64,7 @@ destino_pasta = []
 configuracao_aberta = False
 nova_tarefa_aberta = False
 alterar_pasta_aberta = False
+excluir_tarefa_aberta = False
 
 # --- Funções de controle geral ---
 def selecionar_pasta():
@@ -188,6 +192,8 @@ class Funcoes:
                 self._vincular_nova_tarefa()
             elif view.nome_janela == "alterar-pastas":
                 self._vincular_alterar_pastas()
+            elif view.nome_janela == "excluir-tarefa":
+                self._vincular_excluir_tarefa()
 
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
@@ -249,7 +255,8 @@ class Funcoes:
                                                        command=lambda: self.abrir_nova_tarefa())
         self.view.controles['barra_menu'].add_command(label="Alterar Pastas",
                                                       command=lambda: self.abrir_alterar_pastas())
-        self.view.controles['barra_menu'].add_command(label="Excluir Tarefa")
+        self.view.controles['barra_menu'].add_command(label="Excluir Tarefa",
+                                                      command=lambda: self.abrir_excluir_tarefa())
 
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
@@ -268,6 +275,10 @@ class Funcoes:
                                                            lambda: self.fechar_janelas('janela_alterar_pastas'))
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+
+    # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
+    def _vincular_excluir_tarefa(self):
+        pass
 
     # --- LÓGICA DA JANELA DE LOGS ---
     def _vincular_logs_backup(self):
@@ -326,6 +337,7 @@ class Funcoes:
         logica.view.controles['janela_nova_tarefa'].wait_window()
         nova_tarefa_aberta = False
         if atualizado_pastas:
+            self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="disabled")
             self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="disabled")
             self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
             self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="disabled")
@@ -366,6 +378,18 @@ class Funcoes:
         self.atualizar_configuracao()
         alterar_pasta_aberta = False
 
+    def abrir_excluir_tarefa(self):
+        global excluir_tarefa_aberta
+        excluir_tarefa_aberta = True
+        # 1. Cria a parte vsual
+        visual = JanelaExcluirTarefa(self.view.controles['janela_configuracao'])
+
+        # 2. Cria a lógica e passa a visão para ela controlar
+        logica = Funcoes(visual)
+
+        logica.view.controles['janela_excluir_tarefa'].wait_window()
+        excluir_tarefa_aberta = False
+
     def abrir_logs_backup(self, janela_principal):
         # 1. Cria a parte visual
         visual = JanelaLogsBackup(self.view.controles['janela_principal'])
@@ -374,7 +398,7 @@ class Funcoes:
         logica = Funcoes(visual)
 
     def fechar_janelas(self, janela):
-        global configuracao_aberta, nova_tarefa_aberta, editando_dados
+        global configuracao_aberta, nova_tarefa_aberta, excluir_tarefa_aberta, editando_dados
 
         match janela:
             case 'janela_principal':
@@ -382,7 +406,7 @@ class Funcoes:
                     return
             case 'janela_configuracao':
                 editando_dados = False
-                if nova_tarefa_aberta or alterar_pasta_aberta:
+                if nova_tarefa_aberta or alterar_pasta_aberta or excluir_tarefa_aberta:
                     return
 
         self.view.controles[f'{janela}'].destroy()
@@ -544,6 +568,7 @@ class Funcoes:
             messagebox.showinfo("Aviso", "Nenhum dados foi alterado!\nHabilite a edição ou insira novos dados.")
 
         # Atualizar dados
+        self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="normal")
         self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")
         self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
         self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
