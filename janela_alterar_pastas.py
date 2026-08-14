@@ -67,3 +67,10 @@ class JanelaAlterarPastas:
                                      style="Fonte.TButton")
         self.btn_alterar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
         self.controles['btn_alterar'] = self.btn_alterar
+        linha_campo += 1
+
+        self.btn_adicionar_pasta = ttk.Button(self.frame_campos, text="Adicionar nova pasta",
+                                      style="Fonte.TButton")
+        self.btn_adicionar_pasta.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO,
+                              sticky="nsew")
+        self.controles['btn_adicionar_pasta'] = self.btn_adicionar_pasta

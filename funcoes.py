@@ -55,6 +55,7 @@ pasta_destino = []
 editando_dados = False
 editando_novos_dados = False
 editando_excluir_dados = False
+editando_adicionar_pasta = False
 atualizado_pastas = False
 nova_tarefa_gravada = False
 # Variaveis alterar pastas
@@ -232,9 +233,7 @@ class Funcoes:
     def _vincular_janela_principal(self):
         # --- Inicialização dos dados ---
         nome_tarefa = self.carregar_cmb_selecao()
-        hora = carregar_dados['tarefas'][nome_tarefa]['hora']
-        minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
-        self.view.controles['lbl_hora_execucao'].config(text=f"{hora}:{minuto}")
+        self.atualizar_horario(nome_tarefa)
         # --- Posição da janela principal ---
         largura = 342
         altura = 305
@@ -273,14 +272,12 @@ class Funcoes:
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
         # --- Controle da janela ---
-        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_horario)
+        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_horario(self.view.controles['cmb_selecao'].get()))
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
         # --- Inicialização ---
-        lista_nomes = list(carregar_dados['tarefas'].keys())
-        self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
-        self.view.controles['cmb_selecao'].current(0)
+        self.carregar_cmb_selecao()
         self.atualizar_configuracao()
 
         # --- Controles da Janela Configurações ---
@@ -307,7 +304,7 @@ class Funcoes:
                                                             lambda: self.fechar_janelas('janela_nova_tarefa'))
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
-        self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_pastas())
+        self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_nova_tarefa())
         self.view.controles['btn_salvar'].config(command=lambda: self.gravar_pastas())
 
     # --- LÓGICA DA JANELA ALTERAR PASTAS ---
@@ -317,6 +314,7 @@ class Funcoes:
                                                            lambda: self.fechar_janelas('janela_alterar_pastas'))
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        self.view.controles['btn_adicionar_pasta'].config(command=lambda: self.adicionar_pasta())
 
     # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
     def _vincular_excluir_tarefa(self):
@@ -454,13 +452,6 @@ class Funcoes:
 
         self.view.controles[f'{janela}'].destroy()
 
-    # --- Funções da Janela Principal ---
-    def atualizar_horario(self, event = None):
-        nome_tarefa = self.view.controles['cmb_selecao'].get()
-        hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
-        minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
-        self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
-
     def carregar_cmb_selecao(self):
         lista_nomes = list(carregar_dados['tarefas'].keys())
         self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
@@ -468,6 +459,12 @@ class Funcoes:
         nome_tarefa = self.view.controles['cmb_selecao'].get()
 
         return nome_tarefa
+
+    # --- Funções da Janela Principal ---
+    def atualizar_horario(self, nome_tarefa, event = None):
+        hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
+        minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
+        self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
 
     # --- Funções da Janela Configurações ---
     def atualizar_configuracao(self, event = None):
@@ -579,9 +576,7 @@ class Funcoes:
         desabilitar = self.view.controles['var_desabilitar'].get()
 
         if editando_novos_dados:
-            print("Editando")
             # Verificar dados
-            print(f"Inicio - {tarefa}")
             dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
             dados_tinydb.gravar_nova_tarefa(tarefa, dados)
 
@@ -606,8 +601,6 @@ class Funcoes:
             editando_dados = False
             self.carregar_cmb_selecao()
             self.atualizar_configuracao()
-
-            print("Dados Editados")
             messagebox.showinfo("Aviso", "Dados alterados com sucesso!")
         else:
             messagebox.showinfo("Aviso", "Nenhum dados foi alterado!\nHabilite a edição ou insira novos dados.")
@@ -619,7 +612,7 @@ class Funcoes:
         self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
 
     # --- Funções da janela Nova tarefa ---
-    def adicionar_pastas(self):
+    def adicionar_nova_tarefa(self):
 
         if self.view.controles['txt_origem'].get() != "":
             if self.view.controles['txt_destino'].get() != "":
@@ -659,15 +652,33 @@ class Funcoes:
         self.view.controles['txt_destino'].insert(0, destino_pasta[self.view.controles['cmb_selecao'].current()])
 
     def alterar_pastas(self, nome_tarefa):
-        global origem_pasta, destino_pasta, carregar_dados
-        origem_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_origem'].get()
-        destino_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_destino'].get()
+        global origem_pasta, destino_pasta, carregar_dados, editando_adicionar_pasta
+        if not editando_adicionar_pasta:
+            origem_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_origem'].get()
+            destino_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_destino'].get()
+        else:
+            origem_pasta.append(self.view.controles['txt_origem'].get())
+            destino_pasta.append(self.view.controles['txt_destino'].get())
 
         dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_origem', origem_pasta)
         dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
 
         messagebox.showinfo("Aviso", "Pastas alteradas com sucesso!")
+
+    def adicionar_pasta(self):
+        global editando_adicionar_pasta
+        valores_atuais = list(self.view.controles['cmb_selecao']['values'])
+        index = 1
+        pastas = []
+        for i in range(len(valores_atuais) + 1):
+            pastas.append(f"Pasta{index}")
+            index += 1
+        self.view.controles['cmb_selecao']['values'] = pastas
+        self.view.controles['cmb_selecao'].current(len(pastas) - 1)
+        self.view.controles['txt_origem'].delete(0, "end")
+        self.view.controles['txt_destino'].delete(0, "end")
+        editando_adicionar_pasta = True
 
     # --- Funções da Janela Excluir Tarefa ---
     def excluir_tarefa(self):
