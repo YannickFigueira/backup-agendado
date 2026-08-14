@@ -1,4 +1,7 @@
 import os
+from email import message
+from tkinter import messagebox
+
 from tinydb import TinyDB, Query
 
 dados_dir = "dados"
@@ -110,7 +113,7 @@ def apagar_dados_tarefa(nome_tarefa):
 
         # 4. Salva o documento atualizado de volta no TinyDB
         tabela_config.update(config_atual, Config.id_config == "global")
-        print(f"Tarefa '{nome_tarefa}' removida com sucesso!")
+        messagebox.showinfo("Aviso", "Tarefa removida com sucesso!")
         return True
     else:
         print(f"Erro: A tarefa '{nome_tarefa}' não foi encontrada para remoção.")
