@@ -87,8 +87,8 @@ class JanelaAlterarPastas:
                               sticky="nsew")
         self.controles['btn_adicionar_pasta'] = self.btn_adicionar_pasta
 
-        self.bnt_gravar_adicionar = ttk.Button(self.frame_adicionar, text="Gravar nova pasta",
+        self.btn_gravar_adicionar = ttk.Button(self.frame_adicionar, text="Gravar nova pasta",
                                       style="Fonte.TButton")
-        self.bnt_gravar_adicionar.grid(row=0, column=1, padx=estilo.ESPACO, pady=(0, estilo.ESPACO),
+        self.btn_gravar_adicionar.grid(row=0, column=1, padx=estilo.ESPACO, pady=(0, estilo.ESPACO),
                               sticky="nsew")
-        self.controles['bnt_gravar_adicionar'] = self.bnt_gravar_adicionar
+        self.controles['btn_gravar_adicionar'] = self.btn_gravar_adicionar

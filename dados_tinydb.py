@@ -33,8 +33,6 @@ if not tabela_config.all():
 # --- GRAVAR OS DADOS ---
 def gravar_nova_tarefa(nome_tarefa, dados):
     print(f"Gravando tarefa: {nome_tarefa}")
-    for dado in dados:
-        print(dado)
 
     # 1. Busca o estado mais recente do banco
     config_atual = tabela_config.search(Config.id_config == "global")[0]
