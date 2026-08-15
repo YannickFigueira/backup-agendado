@@ -9,13 +9,14 @@ NOME_PROGRAMA = "Backup Agendado"
 # Medidas
 ESPACO = 5
 LINHA_PAINEL_ESQUERDO = 0
+
 # Container
 ESPACOX = ESPACO
 ESPACOY = 15
+
 # Arquivo de log
 ARQUIVO_ERRO = "backup_agendado.log"
 
 # Estilo
 FONTE_VAZIA=("", 11, "normal")
 FONTE_ARIAL=("Arial", 11, "normal")
-# Variáveis gerais
