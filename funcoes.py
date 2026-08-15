@@ -314,11 +314,11 @@ class Funcoes:
                                                            lambda: self.fechar_janelas('janela_alterar_pastas'))
         self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
         self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
-        self.view.controles['btn_adicionar_pasta'].config(command=lambda: self.adicionar_pasta())
 
     # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
     def _vincular_excluir_tarefa(self):
         self.view.controles['btn_excluir'].config(command=lambda: self.excluir_tarefa())
+        pass
 
     # --- LÓGICA DA JANELA DE LOGS ---
     def _vincular_logs_backup(self):
@@ -406,7 +406,10 @@ class Funcoes:
         destino_pasta = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
         # --- Controles ---
         logica.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", logica.carregar_pastas)
-        logica.view.controles['btn_alterar'].config(command=lambda: logica.alterar_pastas(nome_tarefa))
+        logica.view.controles['btn_alterar'].config(command=lambda: logica.gravar_alterar_pastas(nome_tarefa))
+        logica.view.controles['btn_adicionar_pasta'].config(command=lambda: logica.adicionar_pasta(nome_tarefa))
+        logica.view.controles['btn_excluir_pasta'].config(command=lambda: logica.excluir_pasta(nome_tarefa))
+        logica.view.controles['bnt_gravar_adicionar'].config(command=lambda: logica.gravar_alterar_pastas(nome_tarefa))
 
         # --- inicialização ---
         logica.carregar_pastas()
@@ -551,59 +554,62 @@ class Funcoes:
     def gravar_tarefa(self):
         # Novos dados
         global editando_dados, editando_novos_dados, atualizado_pastas, pasta_origem, pasta_destino, carregar_dados
-        if not atualizado_pastas:
-            pasta_origem = []
-            pasta_destino = []
-            editando_novos_dados = False
+        if self.view.controles['txt_tarefa'].get().strip() != "":
+            if not atualizado_pastas:
+                pasta_origem = []
+                pasta_destino = []
+                editando_novos_dados = False
 
-        # Captura os dados
-        self.view.controles['cmb_selecao'].config(state="readonly")
-        nome_tarefa = self.view.controles['cmb_selecao'].get()
-        tarefa = self.view.controles['txt_tarefa'].get().strip()
-        hora = self.view.controles['spin_hora'].get()
-        minuto = self.view.controles['spin_min'].get()
-        semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
-        diario = self.view.controles['var_diariamente'].get()
-        index = 0
-        execusao = []
-        if diario:
-            execusao = [True] * len(semanas)
+            # Captura os dados
+            self.view.controles['cmb_selecao'].config(state="readonly")
+            nome_tarefa = self.view.controles['cmb_selecao'].get()
+            tarefa = self.view.controles['txt_tarefa'].get().strip()
+            hora = self.view.controles['spin_hora'].get()
+            minuto = self.view.controles['spin_min'].get()
+            semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+            diario = self.view.controles['var_diariamente'].get()
+            index = 0
+            execusao = []
+            if diario:
+                execusao = [True] * len(semanas)
+            else:
+                for i in range(len(semanas)):
+                    execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
+                    index += 1
+            desligar = self.view.controles['var_desligar'].get()
+            desabilitar = self.view.controles['var_desabilitar'].get()
+
+            if editando_novos_dados:
+                # Verificar dados
+                dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
+                dados_tinydb.gravar_nova_tarefa(tarefa, dados)
+
+                editando_novos_dados = False
+                atualizado_pastas = False
+
+                self.carregar_cmb_selecao()
+
+                messagebox.showinfo("Aviso", "Novos dados gravados com sucesso!")
+
+            elif editando_dados:
+                if nome_tarefa != tarefa:
+                    dados_tinydb.renomear_tarefa(nome_tarefa, tarefa)
+
+                dados_tinydb.atualizar_campo_tarefa(tarefa, 'hora', hora)
+                dados_tinydb.atualizar_campo_tarefa(tarefa, 'minuto', minuto)
+                dados_tinydb.atualizar_campo_tarefa(tarefa, 'execucao', execusao)
+                dados_tinydb.atualizar_campo_tarefa(tarefa, 'desligar', desligar)
+                dados_tinydb.atualizar_campo_tarefa(tarefa, 'desabilitar_tarefa', desabilitar)
+
+                carregar_dados = dados_tinydb.carregar_dados_tarefa()
+                editando_dados = False
+                self.carregar_cmb_selecao()
+                self.atualizar_configuracao()
+                messagebox.showinfo("Aviso", "Dados alterados com sucesso!")
+            else:
+                messagebox.showinfo("Aviso", "Nenhum dados foi alterado!\nHabilite a edição ou insira novos dados.")
         else:
-            for i in range(len(semanas)):
-                execusao.append(self.view.controles[f'var_{semanas[index]}'].get())
-                index += 1
-        desligar = self.view.controles['var_desligar'].get()
-        desabilitar = self.view.controles['var_desabilitar'].get()
-
-        if editando_novos_dados:
-            # Verificar dados
-            dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
-            dados_tinydb.gravar_nova_tarefa(tarefa, dados)
-
-            editando_novos_dados = False
-            atualizado_pastas = False
-
-            self.carregar_cmb_selecao()
-
-            messagebox.showinfo("Aviso", "Novos dados gravados com sucesso!")
-
-        elif editando_dados:
-            if nome_tarefa != tarefa:
-                dados_tinydb.renomear_tarefa(nome_tarefa, tarefa)
-
-            dados_tinydb.atualizar_campo_tarefa(tarefa, 'hora', hora)
-            dados_tinydb.atualizar_campo_tarefa(tarefa, 'minuto', minuto)
-            dados_tinydb.atualizar_campo_tarefa(tarefa, 'execucao', execusao)
-            dados_tinydb.atualizar_campo_tarefa(tarefa, 'desligar', desligar)
-            dados_tinydb.atualizar_campo_tarefa(tarefa, 'desabilitar_tarefa', desabilitar)
-
-            carregar_dados = dados_tinydb.carregar_dados_tarefa()
-            editando_dados = False
-            self.carregar_cmb_selecao()
-            self.atualizar_configuracao()
-            messagebox.showinfo("Aviso", "Dados alterados com sucesso!")
-        else:
-            messagebox.showinfo("Aviso", "Nenhum dados foi alterado!\nHabilite a edição ou insira novos dados.")
+            messagebox.showinfo("Aviso", "Nome da tarefa não pode estar vazio!")
 
         # Atualizar dados
         self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="normal")
@@ -651,7 +657,7 @@ class Funcoes:
         self.view.controles['txt_destino'].delete(0, "end")
         self.view.controles['txt_destino'].insert(0, destino_pasta[self.view.controles['cmb_selecao'].current()])
 
-    def alterar_pastas(self, nome_tarefa):
+    def gravar_alterar_pastas(self, nome_tarefa):
         global origem_pasta, destino_pasta, carregar_dados, editando_adicionar_pasta
         if not editando_adicionar_pasta:
             origem_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_origem'].get()
@@ -666,7 +672,7 @@ class Funcoes:
 
         messagebox.showinfo("Aviso", "Pastas alteradas com sucesso!")
 
-    def adicionar_pasta(self):
+    def adicionar_pasta(self, nome_tarefa):
         global editando_adicionar_pasta
         valores_atuais = list(self.view.controles['cmb_selecao']['values'])
         index = 1
@@ -679,6 +685,41 @@ class Funcoes:
         self.view.controles['txt_origem'].delete(0, "end")
         self.view.controles['txt_destino'].delete(0, "end")
         editando_adicionar_pasta = True
+
+    def excluir_pasta(self, nome_tarefa):
+        global origem_pasta, destino_pasta, carregar_dados
+        resposta = messagebox.askyesno("Atenção", "Pasta será excluída!")
+        if resposta:
+            valores_atuais = list(self.view.controles['cmb_selecao']['values'])
+            valores_novos_pasta_origem = []
+            valores_novos_pasta_destino = []
+            for i in range(len(valores_atuais)):
+                if i != self.view.controles['cmb_selecao'].current():
+                    valores_novos_pasta_origem.append(origem_pasta[i])
+                    valores_novos_pasta_destino.append(destino_pasta[i])
+
+            origem_pasta.clear()
+            destino_pasta.clear()
+            origem_pasta = valores_novos_pasta_origem
+            destino_pasta = valores_novos_pasta_destino
+            self.view.controles['cmb_selecao'].current(0)
+            self.carregar_pastas()
+
+            index = 1
+            pastas = []
+            for i in range(len(valores_novos_pasta_origem)):
+                pastas.append(f"Pasta{index}")
+                index += 1
+
+            self.view.controles['cmb_selecao']['values'] = pastas
+            self.view.controles['cmb_selecao'].current(0)
+
+            dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_origem', origem_pasta)
+            dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
+            carregar_dados = dados_tinydb.carregar_dados_tarefa()
+
+            messagebox.showinfo("Aviso", "Pastas excluida com sucesso!")
+
 
     # --- Funções da Janela Excluir Tarefa ---
     def excluir_tarefa(self):
