@@ -16,7 +16,7 @@ Config = Query()
 dados_backup = {
     "id_config": "global",
     "tarefas": {
-        "tarefa1": {
+        "inicial": {
             "hora": "17", "minuto": "00",
             "pastas_origem": ["pasta_origem"], "pastas_destino": ["pasta_destino"],
             "executando": False, "execucao": [True, True, True, True, True, True, True, True],
