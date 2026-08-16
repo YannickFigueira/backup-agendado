@@ -227,9 +227,7 @@ class Funcoes:
     def _vincular_janela_principal(self):
         # --- Inicialização dos dados ---
         nome_tarefa = self.carregar_cmb_selecao()
-        self.atualizar_horario(nome_tarefa)
-        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
-        copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem)
+        self.atualizar_informacoes(nome_tarefa)
 
         # --- Posição da janela principal ---
         largura = 342
@@ -272,7 +270,7 @@ class Funcoes:
         self.view.controles['btn_executar'].config(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].get()))
         self.view.controles['btn_pausar'].config(command=lambda: copiar_arquivos.pausar_copia())
         self.view.controles['btn_encerrar'].config(command=lambda: copiar_arquivos.cancelar_copia())
-        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_horario(self.view.controles['cmb_selecao'].get()))
+        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_informacoes(self.view.controles['cmb_selecao'].get()))
 
         if nome_tarefa == "inicial":
             if nome_tarefa == "inicial":
@@ -521,6 +519,11 @@ class Funcoes:
         messagebox.showinfo("Aviso", "Edição habilitada")
 
     # --- Funções da Janela Principal ---
+    def atualizar_informacoes(self, nome_tarefa):
+        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
+        self.atualizar_horario(nome_tarefa)
+        copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem)
+
     def atualizar_horario(self, nome_tarefa, event = None):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
