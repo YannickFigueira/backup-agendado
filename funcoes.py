@@ -228,6 +228,8 @@ class Funcoes:
         # --- Inicialização dos dados ---
         nome_tarefa = self.carregar_cmb_selecao()
         self.atualizar_horario(nome_tarefa)
+        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
+        copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem)
 
         # --- Posição da janela principal ---
         largura = 342
@@ -268,6 +270,8 @@ class Funcoes:
 
         # --- Controle da janela ---
         self.view.controles['btn_executar'].config(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].get()))
+        self.view.controles['btn_pausar'].config(command=lambda: copiar_arquivos.pausar_copia())
+        self.view.controles['btn_encerrar'].config(command=lambda: copiar_arquivos.cancelar_copia())
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_horario(self.view.controles['cmb_selecao'].get()))
 
         if nome_tarefa == "inicial":

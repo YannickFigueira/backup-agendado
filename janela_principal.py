@@ -53,6 +53,7 @@ class JanelaPrincipal:
         self.lbl_tamanho_exibir = ttk.Label(self.frame_controls, text=(10 * "-"), font=estilo.FONTE_VAZIA, anchor="center")
         self.lbl_tamanho_exibir.grid(row=estilo.LINHA_PAINEL_ESQUERDO, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO,
                                      sticky="nsew")
+        self.controles['lbl_tamanho_exibir'] = self.lbl_tamanho_exibir
         estilo.LINHA_PAINEL_ESQUERDO += 1
 
         self.btn_executar = ttk.Button(self.frame_controls, text="Executar Tarefa", command="")
@@ -60,9 +61,10 @@ class JanelaPrincipal:
         self.controles['btn_executar'] = self.btn_executar
         estilo.LINHA_PAINEL_ESQUERDO += 1
 
-        self.btn_cancelar = ttk.Button(self.frame_controls, text="Cancelar Tarefa", command="")
-        self.btn_cancelar.grid(row=estilo.LINHA_PAINEL_ESQUERDO, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.btn_cancelar.config(state="disabled")
+        self.btn_pausar = ttk.Button(self.frame_controls, text="Pausar Tarefa", command="")
+        self.btn_pausar.grid(row=estilo.LINHA_PAINEL_ESQUERDO, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.btn_pausar.config(state="disabled")
+        self.controles['btn_pausar'] = self.btn_pausar
         estilo.LINHA_PAINEL_ESQUERDO += 1
 
 
@@ -107,6 +109,7 @@ class JanelaPrincipal:
 
         self.btn_encerrar = ttk.Button(self.frame_controls, text="Encerrar Tarefa", command="")
         self.btn_encerrar.grid(row=estilo.LINHA_PAINEL_ESQUERDO, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['btn_encerrar'] = self.btn_encerrar
 
         ## Controles do painel direito
         linha_painel_direito = 0

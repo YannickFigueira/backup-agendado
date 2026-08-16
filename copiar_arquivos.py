@@ -1,19 +1,70 @@
-import os
 import threading
 import time
 from pathlib import Path
+from tkinter import messagebox
 
 import dados_tinydb
 
 # Variável
 tarefas_executando = []
+cancelar = False
+pausar = False
+
+def pausar_copia():
+    global pausar
+    pausar = True
+
+def cancelar_copia():
+    resposta = messagebox.askyesno("Cancelar", "Quer realmente cancelar?")
+    if resposta:
+        global cancelar
+        cancelar = True
+
+def iniciar_calculo_tamanho(view, pastas_origem):
+    t = threading.Thread(
+        target=tamanho_pasta,
+        args=(view, pastas_origem),
+        daemon=True
+    )
+    t.start()
+
+def tamanho_pasta(view, pastas_origem):
+    lbl_tamanho_exibir = view.controles['lbl_tamanho_exibir']
+    lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].config(text="Atualizando..."))
+    tamanho_total = 0
+    for pasta in pastas_origem:
+        ver_pasta = Path(pasta)
+        # rglob cria um gerador. Somamos os tamanhos diretamente sem criar lista em memória
+        tamanho_pasta_atual = sum(
+            f.stat().st_size for f in ver_pasta.rglob("*") if f.is_file()
+        )
+        tamanho_total += tamanho_pasta_atual
+
+    lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].config(text=formatar_tamanho(tamanho_total)))
+
+def formatar_tamanho(tamanho):
+    # Converte o valor para float com segurança
+    try:
+        tamanho = float(tamanho)
+    except (ValueError, TypeError):
+        return "0.00 B"
+
+    for unidade in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if tamanho < 1024.0:
+            return f"{tamanho:.2f} {unidade}"
+        tamanho /= 1024.0
+    return f"{tamanho:.2f} PB"
 
 # --- Execução da cópia dos arquivos
 def iniciar_copiar_arquivos(view, nome_tarefa):
+    view.controles['cmb_selecao'].config(state="disabled")
+    view.controles['btn_executar'].config(state="disabled")
+    view.controles['btn_pausar'].config(state="normal")
     carregar_dados = dados_tinydb.carregar_dados_tarefa()
     pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
     pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
     view.controles['lbl_multi_execucao'].config(text=f"Executando...\n{nome_tarefa}")
+    iniciar_calculo_tamanho(view, pastas_origem)
     iniciar_copia(pastas_origem, pastas_destino, view)
 
 def iniciar_copia(pastas_origem, pastas_destino, view):
@@ -46,10 +97,21 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
         copiando_arquivos(str(caminho_origem), str(pasta_destino_final), view)
 
     # Atualiza a interface ao finalizar todas as cópias
-    lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].config(text="Encerrado cópia"))
+    view.controles['cmb_selecao'].config(state="readonly")
+    view.controles['btn_executar'].config(state="normal")
+    view.controles['btn_pausar'].config(state="disabled")
+    lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].config(text="Concluído cópia!"))
     lbl_execucao.after(0, lambda: view.controles['lbl_multi_execucao'].config(text=""))
 
 def copiando_arquivos(origem, destino, view):
+    global cancelar, pausar
+    if pausar:
+        messagebox.showinfo("Pausa", "Tarefa pausada")
+        pausar = False
+    if cancelar:
+        print("Tarefa encerrada")
+        return
+
     print(origem)
     print(destino)
     time.sleep(10)
