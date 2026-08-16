@@ -756,7 +756,6 @@ class Funcoes:
             self.view.controles['cmb_selecao']['values'] = pastas
             self.view.controles['cmb_selecao'].current(len(pastas) - 1)
             self.view.controles['txt_origem'].delete(0, "end")
-            self.view.controles['txt_destino'].delete(0, "end")
             editando_adicionar_pasta = True
             self.view.controles['btn_adicionar_pasta'].config(state="disabled")
             self.view.controles['btn_gravar_adicionar'].config(state="normal")
