@@ -57,6 +57,7 @@ class JanelaPrincipal:
 
         self.btn_executar = ttk.Button(self.frame_controls, text="Executar Tarefa", command="")
         self.btn_executar.grid(row=estilo.LINHA_PAINEL_ESQUERDO, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['btn_executar'] = self.btn_executar
         estilo.LINHA_PAINEL_ESQUERDO += 1
 
         self.btn_cancelar = ttk.Button(self.frame_controls, text="Cancelar Tarefa", command="")
@@ -102,6 +103,7 @@ class JanelaPrincipal:
             padding=(10, 4, 10, 0)
         )
         self.lbl_multi_execucao.pack(anchor="w")
+        self.controles['lbl_multi_execucao'] = self.lbl_multi_execucao
 
         self.btn_encerrar = ttk.Button(self.frame_controls, text="Encerrar Tarefa", command="")
         self.btn_encerrar.grid(row=estilo.LINHA_PAINEL_ESQUERDO, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")

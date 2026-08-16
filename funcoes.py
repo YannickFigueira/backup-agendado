@@ -9,7 +9,7 @@ from datetime import datetime
 from screeninfo import get_monitors
 
 import estilo
-import verificarversao, dados_tinydb
+import verificarversao, dados_tinydb, copiar_arquivos
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
@@ -267,6 +267,7 @@ class Funcoes:
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
         # --- Controle da janela ---
+        self.view.controles['btn_executar'].config(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].get()))
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_horario(self.view.controles['cmb_selecao'].get()))
 
         if nome_tarefa == "inicial":
@@ -410,7 +411,6 @@ class Funcoes:
         logica = Funcoes(visual)
 
         # Carregar configuração
-        #versiculo = ",".join([f"Versículo {i}" for i in range(1, len(contar) + 1)])
         nome_tarefa = self.view.controles['cmb_selecao'].get()
         quantidade_pastas = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         index = 1
@@ -432,8 +432,6 @@ class Funcoes:
 
         # --- inicialização ---
         logica.carregar_pastas()
-
-
         logica.view.controles['janela_alterar_pastas'].wait_window()
         self.atualizar_configuracao()
         alterar_pasta_aberta = False
@@ -448,7 +446,6 @@ class Funcoes:
         logica = Funcoes(visual)
 
         logica.carregar_cmb_selecao()
-
         logica.view.controles['janela_excluir_tarefa'].wait_window()
         nome_tarefa = self.carregar_cmb_selecao()
         self.atualizar_configuracao()
@@ -692,8 +689,6 @@ class Funcoes:
 
     # --- Funções da janela Nova tarefa ---
     def adicionar_nova_tarefa(self):
-        verificar_origem = self.view.controles['txt_origem'].get().strip()
-        verificar_destino = self.view.controles['txt_destino'].get().strip()
         existe = self.verificar_pastas_existentes()
         if existe:
             origem = self.view.controles['txt_origem'].get().strip().replace("\\","/")
