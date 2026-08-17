@@ -187,15 +187,7 @@ def pegar_resolucao():
     if not first and monitors:
         first = monitors[0]
 
-    # Identifica o monitor secundário
-    second = None
-    if len(monitors) > 1:
-        outros = [m for m in monitors if m != first]
-        second = outros[0] if outros else monitors[1]
-    else:
-        second = first
-
-    return first, second
+    return first
 
 class Funcoes:
     def __init__(self, view):
