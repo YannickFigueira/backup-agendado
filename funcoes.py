@@ -622,6 +622,17 @@ class Funcoes:
             self.view.controles['cmb_selecao'].current(0)
             self.carregar_cmb_selecao()
         else:
+            hora = self.view.controles['spin_hora'].get()
+            minuto = self.view.controles['spin_min'].get()
+
+            if len(hora) > 2:
+                messagebox.showwarning("Aviso", "Formato de hora inválido!\nRedigite ou use as setas")
+                return
+
+            if len(minuto) > 2:
+                messagebox.showwarning("Aviso", "Formato de minuto inválido!\nRedigite ou use as setas")
+                return
+
             if len(nome_tarefa) > 2:
                 if nome_tarefa != "":
                     if not atualizado_pastas:
@@ -633,8 +644,10 @@ class Funcoes:
                     self.view.controles['cmb_selecao'].config(state="readonly")
                     nome_tarefa = self.view.controles['cmb_selecao'].get()
                     tarefa = self.view.controles['txt_tarefa'].get().strip()
-                    hora = self.view.controles['spin_hora'].get()
-                    minuto = self.view.controles['spin_min'].get()
+                    if len(hora) == 1:
+                        hora = f"0{hora}"
+                    if len(minuto) == 1:
+                        minuto = f"0{minuto}"
                     semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
                     diario = self.view.controles['var_diariamente'].get()
                     index = 0
