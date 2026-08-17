@@ -140,10 +140,12 @@ class JanelaPrincipal:
 
         self.lbl_copiado_tamanho = ttk.Label(self.frame_andamento, text=(8*"-"), justify="center", font=estilo.FONTE_VAZIA)
         self.lbl_copiado_tamanho.grid(row=linha_painel_direito, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.controles['lbl_copiado_tamanho'] = self.lbl_copiado_tamanho
 
         self.progress_canvas = tk.Canvas(self.frame_andamento, height=25, bg="white", highlightthickness=1,
                                     highlightbackground="black")
         self.progress_canvas.grid(row=linha_painel_direito, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="e")
+        self.controles['progress_canvas'] = self.progress_canvas
 
         ## Carregar Menus
         #criar_barra_menu(self.janela_principal, self.lbl_multi_andamento)

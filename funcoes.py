@@ -522,7 +522,7 @@ class Funcoes:
     def atualizar_informacoes(self, nome_tarefa):
         pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         self.atualizar_horario(nome_tarefa)
-        copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem)
+        copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
 
     def atualizar_horario(self, nome_tarefa, event = None):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
