@@ -8,8 +8,7 @@ from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
 from screeninfo import get_monitors
 
-import estilo
-import verificarversao, dados_tinydb, copiar_arquivos
+import verificarversao, dados_tinydb, copiar_arquivos, estilo
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
@@ -247,7 +246,7 @@ class Funcoes:
         # --- Controle do Menu ---
         # -- Menu Arquivo --
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
-                                    command=lambda: self.abrir_configuracoes())
+                                    command=lambda: self.abrir_configuracoes(nome_tarefa))
         self.view.controles['menu_arquivo'].add_command(label="Logs",
                                     command=lambda: self.abrir_logs_backup(self.view.controles['janela_principal']))
         # Mudar comado para withdraw
@@ -275,7 +274,7 @@ class Funcoes:
         if nome_tarefa == "inicial":
             if nome_tarefa == "inicial":
                 messagebox.showinfo("Aviso", "Insira a primeira tarefa")
-                self.abrir_configuracoes()
+                self.abrir_configuracoes(nome_tarefa)
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
@@ -338,7 +337,7 @@ class Funcoes:
         self.view.controles['txt_destino'].insert(0, selecionar_pasta())
 
     # --- Funções das janelas ---
-    def abrir_configuracoes(self):
+    def abrir_configuracoes(self, nome_tarefa):
         global editando_novos_dados, configuracao_aberta, carregar_dados
         configuracao_aberta = True
         # 1. Cria a parte visual
@@ -348,7 +347,7 @@ class Funcoes:
         logica = Funcoes(visual)
 
         # --- Inicialização ---
-        nome_tarefa = self.carregar_cmb_selecao()
+        #nome_tarefa = logica.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
             logica.desabiliatar_menus_configuracao()
         else:
@@ -522,7 +521,8 @@ class Funcoes:
     def atualizar_informacoes(self, nome_tarefa):
         pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         self.atualizar_horario(nome_tarefa)
-        copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
+        if nome_tarefa != "inicial":
+            copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
 
     def atualizar_horario(self, nome_tarefa, event = None):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']

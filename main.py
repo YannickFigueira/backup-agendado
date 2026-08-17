@@ -1,7 +1,7 @@
 import argparse
 import tkinter as tk
 
-import estilo
+import estilo, backup_automatizado
 from funcoes import Funcoes
 from janela_principal import JanelaPrincipal
 
@@ -18,6 +18,7 @@ if __name__ == "__main__":
 
     # 3. Passa a visão para a sua classe de Lógica controlar
     logica = Funcoes(visual)
+    backup_automatizado.iniciar_monitoramento()
 
     # 4. Inicia o programa
     root.mainloop()

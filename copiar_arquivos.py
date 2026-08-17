@@ -1,7 +1,6 @@
 import os
 import shutil
 import threading
-import time
 from pathlib import Path
 from tkinter import messagebox
 
@@ -94,6 +93,7 @@ def iniciar_copiar_arquivos(view, nome_tarefa):
     pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
     pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
     view.controles['lbl_multi_execucao'].config(text=f"Executando...\n{nome_tarefa}")
+
     iniciar_calculo_tamanho(view, pastas_origem, "execucao")
     iniciar_copia(pastas_origem, pastas_destino, view)
 
@@ -145,37 +145,54 @@ def copiando_arquivos(origem, destino, view):
         print("Tarefa encerrada")
         return
 
-    # lista todos os arquivos e subpastas
-    arquivos = []
     for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
-        #print(f"Diretorio: {Path(raiz)}")
         destino_final = destino / Path(raiz).relative_to(origem)
         if Path(raiz).is_dir():
-            #print(f"{destino_final}")
             destino_final.mkdir(parents=True, exist_ok=True)
 
         for f in files:
-            #arquivos.append(Path(raiz) / f)
             origem_arquivo = Path(raiz) / f
             soma += origem_arquivo.stat().st_size
-            print(f"Tamanhos -> {contador}")
             destino_arquivo = destino / Path(raiz).relative_to(origem) / f
             lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].config(text=f"{formatar_tamanho(origem_arquivo.stat().st_size)} -> {origem_arquivo}"))
             lbl_copiado_tamanho.after(0, lambda: view.controles['lbl_copiado_tamanho'].config(text=formatar_tamanho(soma)))
 
-            # 1. Se o arquivo não existe no destino, copia direto
-            if not destino_arquivo.is_file():
-                shutil.copy2(origem_arquivo, destino_arquivo)
-
-            # 2. Se ele existe, compara as datas de modificação
-            elif origem_arquivo.stat().st_mtime > destino_arquivo.stat().st_mtime:
-                shutil.copy2(origem_arquivo, destino_arquivo)
-            #print(f"Origem -- {Path(raiz) / f}")
-            #print(f"Destino -- {destino / Path(raiz).relative_to(origem) / f}")
+            copiar(origem_arquivo, destino_arquivo)
 
             if liberar_total:
                 atualizar_barra(contador, total_arquivos, view.controles['progress_canvas'])
             contador += 1
 
-    #time.sleep(5)
     print("Executado com sucesso")
+
+# --- Procedimento de cópia automatizada ---
+def inicar_copia_automatizada(pastas_origem, pastas_destino):
+    # zip alinha origem/destino; enumerate fornece o índice 'i'
+    for i, (origem, destino_base) in enumerate(zip(pastas_origem, pastas_destino)):
+        caminho_origem = Path(origem)
+        # / une caminhos automaticamente independente do S.O.
+        destino = Path(destino_base) / caminho_origem.name
+
+        print(f"Iniciando cópia...Tarefa{i+1}\n")
+
+        for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
+            destino_final = destino / Path(raiz).relative_to(origem)
+            if Path(raiz).is_dir():
+                destino_final.mkdir(parents=True, exist_ok=True)
+
+            for f in files:
+                origem_arquivo = Path(raiz) / f
+                destino_arquivo = destino / Path(raiz).relative_to(origem) / f
+
+                copiar(origem_arquivo, destino_arquivo)
+
+    print("Executado com sucesso")
+
+def copiar(origem_arquivo, destino_arquivo):
+    # 1. Se o arquivo não existe no destino, copia direto
+    if not destino_arquivo.is_file():
+        shutil.copy2(origem_arquivo, destino_arquivo)
+
+    # 2. Se ele existe, compara as datas de modificação
+    elif origem_arquivo.stat().st_mtime > destino_arquivo.stat().st_mtime:
+        shutil.copy2(origem_arquivo, destino_arquivo)
