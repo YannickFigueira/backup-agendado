@@ -36,7 +36,7 @@ def atualizar_barra(valor, total, progress_canvas):
     x = progress_canvas.winfo_width() // 2
     progress_canvas.create_text(x, 12, text=f"{porcentagem:.3f}%", fill="black", font=("Arial", 10, "bold"))
 
-# --- Inicio de todo o procedimento
+# --- Inicio do procedimento
 def iniciar_calculo_tamanho(view, pastas_origem, liberar):
     t = threading.Thread(
         target=tamanho_pasta,
@@ -106,7 +106,7 @@ def iniciar_copia(pastas_origem, pastas_destino, view):
     t.start()
 
 def copiando_pastas(pastas_origem, pastas_destino, view):
-    # Pegamos um widget do Tkinter do dicionário para usar o método .after()
+    # Pegamos um widget do Tkinter do dicionário para usar o procedimento .after()
     lbl_andamento = view.controles['lbl_multi_andamento']
     lbl_execucao = view.controles['lbl_multi_execucao']
 
