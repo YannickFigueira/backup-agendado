@@ -147,17 +147,6 @@ def visitar_site():
     if resposta:
         verificarversao.webbrowser.open(pagina)
 
-def abrir_logs():
-    if platform.system() == "Windows":
-        arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
-        subprocess.run(["notepad", arquivo])
-    elif platform.system() == "Linux":
-        arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
-        subprocess.run(["xdg-open", arquivo])  # ou "gedit"
-    else:
-        print("Sistema não suportado")
-
-
 def verificar_tarefas_existentes(valores_atuais):
     nova_tarefa = "tarefa"
 
@@ -214,6 +203,15 @@ def registrar_log(caminho_log, mensagem):
     # encoding='utf-8' previne erros de acentuação no arquivo
     with open(caminho_log, mode="a", encoding="utf-8") as arquivo:
         arquivo.write(f"[{timestamp}] {mensagem}\n")
+
+def ler_pasta_log():
+    global log_files
+    arquivos_log = []
+
+    for item in log_files.rglob("*.log"):
+        arquivos_log.append(item)
+
+    return list(arquivos_log)
 
 class Funcoes:
     def __init__(self, view):
@@ -344,11 +342,19 @@ class Funcoes:
     # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
     def _vincular_excluir_tarefa(self):
         self.view.controles['btn_excluir'].config(command=lambda: self.excluir_tarefa())
-        pass
 
     # --- LÓGICA DA JANELA DE LOGS ---
     def _vincular_logs_backup(self):
-        pass
+        # --- Controles da janela de logs
+        self.view.controles['janela_logs_backup'].protocol("WM_DELETE_WINDOW",
+                                                              lambda: self.fechar_janelas('janela_logs_backup'))
+        arquivos_log = ler_pasta_log()
+        texto_log = "\n".join([f"{item}" for item in arquivos_log])
+
+        self.view.controles['lbl_logs'].config(text=texto_log)
+        self.view.controles['cmb_selecao'].config(values=arquivos_log)
+        self.view.controles['cmb_selecao'].current(0)
+        self.view.controles['btn_abrir_logs'].config(command=lambda: self.abrir_logs())
 
     # --- Funcionalidade geral ---
     # Ações da janela
@@ -484,6 +490,8 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+
+        logica.view.controles['janela_logs_backup'].wait_window()
 
     def fechar_janelas(self, janela):
         global configuracao_aberta, nova_tarefa_aberta, excluir_tarefa_aberta, editando_dados
@@ -855,3 +863,15 @@ class Funcoes:
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
+
+    # --- Funções da Janela de Logs
+    def abrir_logs(self):
+        arquivo = self.view.controles['cmb_selecao'].get()
+        if platform.system() == "Windows":
+            #arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
+            subprocess.run(["notepad", arquivo])
+        elif platform.system() == "Linux":
+            #arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
+            subprocess.run(["xdg-open", arquivo])  # ou "gedit"
+        else:
+            print("Sistema não suportado")
