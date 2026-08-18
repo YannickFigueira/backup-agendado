@@ -2,10 +2,7 @@ import threading
 from datetime import datetime
 from time import sleep
 
-import copiar_arquivos
-import dados_tinydb
-from copiar_arquivos import copiando_arquivos
-
+import dados_tinydb, copiar_arquivos
 
 # --- Inicialização dos dados ---
 
@@ -37,10 +34,8 @@ def executar_backup(hora_atual):
     for nome_tarefa in lista_nomes:
         hora = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
-        print(f"{hora_atual} - {hora}:{minuto}")
         if f"{hora}:{minuto}" == hora_atual:
             executar_tarefa.append(nome_tarefa)
-
 
     for nome_tarefa in executar_tarefa:
         pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']

@@ -5,6 +5,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 import dados_tinydb
+from funcoes import registrar_log, gerar_arquivo_log
 
 # Variável
 tarefas_executando = []
@@ -167,6 +168,7 @@ def copiando_arquivos(origem, destino, view):
 
 # --- Procedimento de cópia automatizada ---
 def inicar_copia_automatizada(pastas_origem, pastas_destino):
+    caminho_log = gerar_arquivo_log()
     # zip alinha origem/destino; enumerate fornece o índice 'i'
     for i, (origem, destino_base) in enumerate(zip(pastas_origem, pastas_destino)):
         caminho_origem = Path(origem)
@@ -184,6 +186,7 @@ def inicar_copia_automatizada(pastas_origem, pastas_destino):
                 origem_arquivo = Path(raiz) / f
                 destino_arquivo = destino / Path(raiz).relative_to(origem) / f
 
+                registrar_log(caminho_log, origem_arquivo)
                 copiar(origem_arquivo, destino_arquivo)
 
     print("Executado com sucesso")

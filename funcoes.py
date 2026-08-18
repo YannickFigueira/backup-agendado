@@ -3,6 +3,7 @@ import os
 import platform
 import re
 import subprocess
+from pathlib import Path
 
 from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
@@ -22,9 +23,15 @@ home_dir = os.path.expanduser('~')
 log_dir = f"{home_dir}/log"
 programa_dir = f"{home_dir}/.backup agendado"
 notas = f"{home_dir}/.backup agendado/notas"
+log_files = Path(f"{home_dir}/.backup agendado/logs")
 
 if not os.path.exists(programa_dir):
     os.mkdir(programa_dir)
+if not os.path.exists(notas):
+    os.mkdir(notas)
+if not os.path.exists(log_files):
+    os.mkdir(log_files)
+
 # Pastas de configuração Windows
 
 if platform.system() == 'Linux':
@@ -189,6 +196,25 @@ def pegar_resolucao():
 
     return first
 
+def gerar_arquivo_log():
+    global log_files
+    # Gera o nome dinâmico do arquivo
+    log_files.mkdir(exist_ok=True)
+    nome_arquivo = f"{datetime.now():%Y%m%d_%H%M}.log"
+    caminho_log = log_files / nome_arquivo
+
+    return caminho_log
+
+def registrar_log(caminho_log, mensagem):
+
+    """Abre o arquivo no modo append ('a') e escreve a mensagem com timestamp."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 'a' abre o arquivo para escrita sem apagar o conteúdo existente
+    # encoding='utf-8' previne erros de acentuação no arquivo
+    with open(caminho_log, mode="a", encoding="utf-8") as arquivo:
+        arquivo.write(f"[{timestamp}] {mensagem}\n")
+
 class Funcoes:
     def __init__(self, view):
         self.view = view
@@ -224,9 +250,15 @@ class Funcoes:
         largura = 342
         altura = 305
 
-        first, second = pegar_resolucao()
-        largura_tela = first.width
-        altura_tela = first.height
+        first = pegar_resolucao()
+
+        if first is not None:
+            largura_tela = first.width
+            altura_tela = first.height
+        else:
+            # Defina um valor padrão de fallback caso não encontre o monitor
+            largura_tela = 1920
+            altura_tela = 1080
 
         # Calcula as posições X e Y para centralizar
         pos_x = int((largura_tela / 2) - largura)
@@ -240,7 +272,7 @@ class Funcoes:
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
                                     command=lambda: self.abrir_configuracoes(nome_tarefa))
         self.view.controles['menu_arquivo'].add_command(label="Logs",
-                                    command=lambda: self.abrir_logs_backup(self.view.controles['janela_principal']))
+                                    command=lambda: self.abrir_logs_backup())
         # Mudar comado para withdraw
         self.view.controles['menu_arquivo'].add_command(label="Sair",
                                                         command=lambda: self.view.controles['janela_principal'].quit()) # Mudar para withdraw
@@ -277,7 +309,7 @@ class Funcoes:
         # --- Controles da Janela Configurações ---
         self.view.controles['janela_configuracao'].protocol("WM_DELETE_WINDOW",
                                                          lambda: self.fechar_janelas('janela_configuracao'))
-        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", self.atualizar_configuracao)
+        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
         self.view.controles['btn_gravar'].config(command=lambda: self.gravar_tarefa())
 
@@ -417,10 +449,10 @@ class Funcoes:
         origem_pasta = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         destino_pasta = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
         # --- Controles ---
-        logica.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", logica.carregar_pastas)
+        logica.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", lambda _: logica.carregar_pastas())
         logica.view.controles['btn_alterar'].config(command=lambda: logica.gravar_alterar_pastas(nome_tarefa))
         logica.view.controles['btn_excluir_pasta'].config(command=lambda: logica.excluir_pasta(nome_tarefa))
-        logica.view.controles['btn_adicionar_pasta'].config(command=lambda: logica.adicionar_pasta(nome_tarefa))
+        logica.view.controles['btn_adicionar_pasta'].config(command=lambda: logica.adicionar_pasta())
         logica.view.controles['btn_gravar_adicionar'].config(command=lambda: logica.gravar_alterar_pastas(nome_tarefa))
 
         # --- inicialização ---
@@ -446,7 +478,7 @@ class Funcoes:
             self.desabiliatar_menus_configuracao()
         excluir_tarefa_aberta = False
 
-    def abrir_logs_backup(self, janela_principal):
+    def abrir_logs_backup(self):
         # 1. Cria a parte visual
         visual = JanelaLogsBackup(self.view.controles['janela_principal'])
 
@@ -516,13 +548,14 @@ class Funcoes:
         if nome_tarefa != "inicial":
             copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
 
-    def atualizar_horario(self, nome_tarefa, event = None):
+    def atualizar_horario(self, nome_tarefa):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
         self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
 
     # --- Funções da Janela Configurações ---
-    def atualizar_configuracao(self, event = None):
+    def atualizar_configuracao(self):
+        print("Executado")
         global editando_excluir_dados
         if not editando_novos_dados or editando_dados:
             if editando_excluir_dados:
@@ -724,7 +757,7 @@ class Funcoes:
             messagebox.showinfo("Aviso", "Adicione ao menos uma pasta")
 
     # --- Funcões da Janela Alterar Pastas ---
-    def carregar_pastas(self, event = None):
+    def carregar_pastas(self):
         global origem_pasta, destino_pasta
         self.view.controles['txt_origem'].delete(0, "end")
         self.view.controles['txt_origem'].insert(0, origem_pasta[self.view.controles['cmb_selecao'].current()])
@@ -750,7 +783,7 @@ class Funcoes:
 
             messagebox.showinfo("Aviso", "Pastas alteradas com sucesso!")
 
-    def adicionar_pasta(self, nome_tarefa):
+    def adicionar_pasta(self):
         global editando_adicionar_pasta
         existe = self.verificar_pastas_existentes()
         if existe:
