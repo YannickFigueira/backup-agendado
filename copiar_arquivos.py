@@ -169,13 +169,14 @@ def copiando_arquivos(origem, destino, view):
 # --- Procedimento de cópia automatizada ---
 def inicar_copia_automatizada(pastas_origem, pastas_destino):
     caminho_log = gerar_arquivo_log()
+    registrar_log(caminho_log, "Iniciando processo de backup.")
     # zip alinha origem/destino; enumerate fornece o índice 'i'
     for i, (origem, destino_base) in enumerate(zip(pastas_origem, pastas_destino)):
         caminho_origem = Path(origem)
         # / une caminhos automaticamente independente do S.O.
         destino = Path(destino_base) / caminho_origem.name
 
-        print(f"Iniciando cópia...Tarefa{i+1}\n")
+        registrar_log(caminho_log, f"Copiando pasta {origem}")
 
         for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
             destino_final = destino / Path(raiz).relative_to(origem)
@@ -186,8 +187,12 @@ def inicar_copia_automatizada(pastas_origem, pastas_destino):
                 origem_arquivo = Path(raiz) / f
                 destino_arquivo = destino / Path(raiz).relative_to(origem) / f
 
-                registrar_log(caminho_log, origem_arquivo)
-                copiar(origem_arquivo, destino_arquivo)
+                try:
+                    copiar(origem_arquivo, destino_arquivo)
+                except Exception as e:
+                    registrar_log(caminho_log, f"Erro ao copiar: {e} {origem_arquivo}")
+
+        registrar_log(caminho_log, "Processo finalizado.\n" + ("_" * 40))
 
     print("Executado com sucesso")
 

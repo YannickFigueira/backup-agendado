@@ -206,12 +206,41 @@ def registrar_log(caminho_log, mensagem):
 
 def ler_pasta_log():
     global log_files
-    arquivos_log = []
+    # reverse=True garante do mais recente para o mais antigo
+    logs_ordenados = sorted(
+        [item for item in log_files.rglob("*.log") if item.is_file()],
+        key=lambda item: item.stat().st_mtime,
+        reverse=True
+    )
 
-    for item in log_files.rglob("*.log"):
-        arquivos_log.append(item)
+    return [item.name for item in logs_ordenados]
 
-    return list(arquivos_log)
+def limpar_logs(limite=10):
+    if not log_files.exists():
+        return
+
+    # 1. Coleta todos os arquivos .log e ordena pelo mais antigo primeiro
+    # Como o padrão do seu nome é AAAAMMDD_HHMM.log, a ordenação por nome/mtime funciona perfeitamente
+    arquivos_log = sorted(
+        [f for f in log_files.glob("*.log") if f.is_file()],
+        key=lambda item: item.stat().st_mtime
+    )
+
+    # 2. Verifica se a quantidade excede o limite estipulado (10)
+    quantidade_arquivos = len(arquivos_log)
+
+    if quantidade_arquivos > limite:
+        # Pega a quantidade exata de arquivos mais antigos que excederam o limite
+        qtd_para_deletar = quantidade_arquivos - limite
+        logs_para_deletar = arquivos_log[:qtd_para_deletar]
+
+        # 3. Exclui com segurança diretamente no sistema de arquivos
+        for log in logs_para_deletar:
+            try:
+                log.unlink()  # Deleta o arquivo
+                print(f"Log antigo removido: {log.name}")
+            except Exception as e:
+                print(f"Erro ao deletar {log.name}: {e}")
 
 class Funcoes:
     def __init__(self, view):
@@ -563,7 +592,6 @@ class Funcoes:
 
     # --- Funções da Janela Configurações ---
     def atualizar_configuracao(self):
-        print("Executado")
         global editando_excluir_dados
         if not editando_novos_dados or editando_dados:
             if editando_excluir_dados:
@@ -872,6 +900,6 @@ class Funcoes:
             subprocess.run(["notepad", arquivo])
         elif platform.system() == "Linux":
             #arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
-            subprocess.run(["xdg-open", arquivo])  # ou "gedit"
+            subprocess.run(["xdg-open", log_files / arquivo])  # ou "gedit"
         else:
             print("Sistema não suportado")
