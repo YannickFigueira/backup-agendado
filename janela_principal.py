@@ -85,20 +85,12 @@ class JanelaPrincipal:
         self.moldura_execucao_borda.pack_propagate(False)
         estilo.LINHA_PAINEL_ESQUERDO += 1 + linha_estendida_moldura_execucao
 
-        # Texto de exemplo
-        texto_longo = (
-            "Status do Sistema:\n"
-            "- Backup da pasta 'Trabalho' concluído.\n"
-            "- Erro ao acessar a unidade E:/ (Dispositivo desconectado).\n"
-            "- Próxima verificação agendada para às 20:00."
-        )
-
         self.frame_controls.update_idletasks()
         largura_moldura = self.moldura_execucao_borda.winfo_width()
 
         self.lbl_multi_execucao = ttk.Label(
             self.moldura_execucao_borda,
-            text=texto_longo,
+            text="",
             justify="left",
             wraplength=largura_moldura - 10 * 2,
             font=estilo.FONTE_VAZIA,
@@ -126,7 +118,7 @@ class JanelaPrincipal:
 
         self.lbl_multi_andamento = ttk.Label(
             self.moldura_andamento_atual,
-            text=texto_longo,
+            text="",
             justify="left",
             wraplength=500,
             font=estilo.FONTE_VAZIA,

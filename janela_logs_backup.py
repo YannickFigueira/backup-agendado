@@ -44,7 +44,7 @@ class JanelaLogsBackup:
 
         self.lbl_logs = ttk.Label(
             self.moldura_log_lista,
-            text=texto_longo,
+            text="",
             justify="left",
             wraplength=largura_moldura - 10 * 2,
             font=estilo.FONTE_VAZIA,
