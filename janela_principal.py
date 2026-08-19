@@ -66,16 +66,10 @@ class JanelaPrincipal:
         self.btn_pausar.config(state="disabled")
         self.controles['btn_pausar'] = self.btn_pausar
         estilo.LINHA_PAINEL_ESQUERDO += 1
-
-
-
         self.controles['linha_painel_esquerdo'] = estilo.LINHA_PAINEL_ESQUERDO
 
-
         # Usando o separador customizado
-
         estilo.LINHA_PAINEL_ESQUERDO += 1
-
         linha_estendida_moldura_execucao = 5
         self.frame_controls.rowconfigure(estilo.LINHA_PAINEL_ESQUERDO, weight=0)
         self.moldura_execucao_borda = ttk.Frame(self.frame_controls, height=110, relief="solid", borderwidth=1)

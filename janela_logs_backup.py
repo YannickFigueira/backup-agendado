@@ -26,20 +26,6 @@ class JanelaLogsBackup:
         self.moldura_log_lista.grid_propagate(False)
         self.moldura_log_lista.pack_propagate(False)
 
-        # Texto de exemplo
-        texto_longo = (
-            "Status do Sistema:\n"
-            "- Backup da pasta 'Trabalho' concluído.\n"
-            "- Erro ao acessar a unidade E:/ (Dispositivo desconectado).\n"
-            "- Próxima verificação agendada para às 20:00.\n"
-            "linha 5\n"
-            "linha 6\n"
-            "linha 7\n"
-            "linha 8\n"
-            "linha 9\n"
-            "linha 10\n"
-        )
-
         self.janela_logs_backup.update_idletasks()
         largura_moldura = self.moldura_log_lista.winfo_width()
 
