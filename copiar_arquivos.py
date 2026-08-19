@@ -5,7 +5,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 import dados_tinydb
-from funcoes import registrar_log, gerar_arquivo_log
+from arquivo_log import gerar_arquivo_log, registrar_log
 
 # Variável
 tarefas_executando = []

@@ -3,7 +3,7 @@ from datetime import datetime
 from time import sleep
 
 import dados_tinydb, copiar_arquivos
-from funcoes import limpar_logs
+from arquivo_log import limpar_logs
 
 
 # --- Inicialização dos dados ---

@@ -2,14 +2,13 @@ import logging
 import os
 import platform
 import re
-import subprocess
-from pathlib import Path
 
 from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
 from screeninfo import get_monitors
 
 import verificarversao, dados_tinydb, copiar_arquivos, estilo
+from arquivo_log import abrir_logs, ler_pasta_log
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
@@ -18,28 +17,13 @@ from janela_excluir_tarefa import JanelaExcluirTarefa
 
 # --- Registro de erros ---
 arquivo_erro = estilo.ARQUIVO_ERRO
-# Pastas de configuração Linux
-home_dir = os.path.expanduser('~')
-log_dir = f"{home_dir}/log"
-programa_dir = f"{home_dir}/.backup agendado"
-notas = f"{home_dir}/.backup agendado/notas"
-log_files = Path(f"{home_dir}/.backup agendado/logs")
-
-if not os.path.exists(programa_dir):
-    os.mkdir(programa_dir)
-if not os.path.exists(notas):
-    os.mkdir(notas)
-if not os.path.exists(log_files):
-    os.mkdir(log_files)
 
 # Pastas de configuração Windows
 
 if platform.system() == 'Linux':
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
 
     logging.basicConfig(
-        filename=f"{home_dir}/log/{arquivo_erro}",        # nome do arquivo
+        filename=f"{estilo.home_dir}/log/{arquivo_erro}",        # nome do arquivo
         level=logging.ERROR,         # nível de log
         format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -185,15 +169,6 @@ def pegar_resolucao():
 
     return first
 
-def gerar_arquivo_log():
-    global log_files
-    # Gera o nome dinâmico do arquivo
-    log_files.mkdir(exist_ok=True)
-    nome_arquivo = f"{datetime.now():%Y%m%d_%H%M}.log"
-    caminho_log = log_files / nome_arquivo
-
-    return caminho_log
-
 def registrar_log(caminho_log, mensagem):
 
     """Abre o arquivo no modo append ('a') e escreve a mensagem com timestamp."""
@@ -203,44 +178,6 @@ def registrar_log(caminho_log, mensagem):
     # encoding='utf-8' previne erros de acentuação no arquivo
     with open(caminho_log, mode="a", encoding="utf-8") as arquivo:
         arquivo.write(f"[{timestamp}] {mensagem}\n")
-
-def ler_pasta_log():
-    global log_files
-    # reverse=True garante do mais recente para o mais antigo
-    logs_ordenados = sorted(
-        [item for item in log_files.rglob("*.log") if item.is_file()],
-        key=lambda item: item.stat().st_mtime,
-        reverse=True
-    )
-
-    return [item.name for item in logs_ordenados]
-
-def limpar_logs(limite=10):
-    if not log_files.exists():
-        return
-
-    # 1. Coleta todos os arquivos .log e ordena pelo mais antigo primeiro
-    # Como o padrão do seu nome é AAAAMMDD_HHMM.log, a ordenação por nome/mtime funciona perfeitamente
-    arquivos_log = sorted(
-        [f for f in log_files.glob("*.log") if f.is_file()],
-        key=lambda item: item.stat().st_mtime
-    )
-
-    # 2. Verifica se a quantidade excede o limite estipulado (10)
-    quantidade_arquivos = len(arquivos_log)
-
-    if quantidade_arquivos > limite:
-        # Pega a quantidade exata de arquivos mais antigos que excederam o limite
-        qtd_para_deletar = quantidade_arquivos - limite
-        logs_para_deletar = arquivos_log[:qtd_para_deletar]
-
-        # 3. Exclui com segurança diretamente no sistema de arquivos
-        for log in logs_para_deletar:
-            try:
-                log.unlink()  # Deleta o arquivo
-                print(f"Log antigo removido: {log.name}")
-            except Exception as e:
-                print(f"Erro ao deletar {log.name}: {e}")
 
 class Funcoes:
     def __init__(self, view):
@@ -297,9 +234,9 @@ class Funcoes:
         # --- Controle do Menu ---
         # -- Menu Arquivo --
         self.view.controles['menu_arquivo'].add_command(label="Configurações",
-                                    command=lambda: self.abrir_configuracoes(nome_tarefa))
+                                    command=lambda: self.abrir_janela_configuracoes(nome_tarefa))
         self.view.controles['menu_arquivo'].add_command(label="Logs",
-                                    command=lambda: self.abrir_logs_backup())
+                                    command=lambda: self.abrir_janela_logs_backup())
         # Mudar comado para withdraw
         self.view.controles['menu_arquivo'].add_command(label="Sair",
                                                         command=lambda: self.view.controles['janela_principal'].quit()) # Mudar para withdraw
@@ -325,7 +262,7 @@ class Funcoes:
         if nome_tarefa == "inicial":
             if nome_tarefa == "inicial":
                 messagebox.showinfo("Aviso", "Insira a primeira tarefa")
-                self.abrir_configuracoes(nome_tarefa)
+                self.abrir_janela_configuracoes(nome_tarefa)
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
@@ -344,11 +281,11 @@ class Funcoes:
         self.view.controles['barra_menu'].add_command(label="Editar Tarefa",
                                                       command=lambda: self.habilitar_edicao())
         self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
-                                                       command=lambda: self.abrir_nova_tarefa())
+                                                       command=lambda: self.abrir_janela_nova_tarefa())
         self.view.controles['barra_menu'].add_command(label="Alterar Pastas",
-                                                      command=lambda: self.abrir_alterar_pastas())
+                                                      command=lambda: self.abrir_janela_alterar_pastas())
         self.view.controles['barra_menu'].add_command(label="Excluir Tarefa",
-                                                      command=lambda: self.abrir_excluir_tarefa())
+                                                      command=lambda: self.abrir_janela_excluir_tarefa())
 
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
@@ -374,16 +311,18 @@ class Funcoes:
 
     # --- LÓGICA DA JANELA DE LOGS ---
     def _vincular_logs_backup(self):
+        # --- Inicialização da janela logs ---
+        arquivos_log = ler_pasta_log()
+        texto_log = "\n".join([f"{item}" for item in arquivos_log])
+
         # --- Controles da janela de logs
         self.view.controles['janela_logs_backup'].protocol("WM_DELETE_WINDOW",
                                                               lambda: self.fechar_janelas('janela_logs_backup'))
-        arquivos_log = ler_pasta_log()
-        texto_log = "\n".join([f"{item}" for item in arquivos_log])
 
         self.view.controles['lbl_logs'].config(text=texto_log)
         self.view.controles['cmb_selecao'].config(values=arquivos_log)
         self.view.controles['cmb_selecao'].current(0)
-        self.view.controles['btn_abrir_logs'].config(command=lambda: self.abrir_logs())
+        self.view.controles['btn_abrir_logs'].config(command=lambda: abrir_logs(self.view))
 
     # --- Funcionalidade geral ---
     # Ações da janela
@@ -396,7 +335,7 @@ class Funcoes:
         self.view.controles['txt_destino'].insert(0, selecionar_pasta())
 
     # --- Funções das janelas ---
-    def abrir_configuracoes(self, nome_tarefa):
+    def abrir_janela_configuracoes(self, nome_tarefa):
         global editando_novos_dados, configuracao_aberta, carregar_dados
         configuracao_aberta = True
         # 1. Cria a parte visual
@@ -436,7 +375,7 @@ class Funcoes:
             minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
             self.view.controles['lbl_hora_execucao'].config(text=f"{hora}:{minuto}")
 
-    def abrir_nova_tarefa(self):
+    def abrir_janela_nova_tarefa(self):
         global pasta_origem, pasta_destino, nova_tarefa_aberta
         nova_tarefa_aberta = True
         # 1. Cria a parte visual
@@ -461,7 +400,7 @@ class Funcoes:
         # 3. Atualiza os valores do Combobox
         self.atualizar_configuracao()
 
-    def abrir_alterar_pastas(self):
+    def abrir_janela_alterar_pastas(self):
         global alterar_pasta_aberta, origem_pasta, destino_pasta
         alterar_pasta_aberta = True
         # 1. Cria a parte visual
@@ -496,7 +435,7 @@ class Funcoes:
         self.atualizar_configuracao()
         alterar_pasta_aberta = False
 
-    def abrir_excluir_tarefa(self):
+    def abrir_janela_excluir_tarefa(self):
         global excluir_tarefa_aberta
         excluir_tarefa_aberta = True
         # 1. Cria a parte vsual
@@ -513,7 +452,7 @@ class Funcoes:
             self.desabiliatar_menus_configuracao()
         excluir_tarefa_aberta = False
 
-    def abrir_logs_backup(self):
+    def abrir_janela_logs_backup(self):
         # 1. Cria a parte visual
         visual = JanelaLogsBackup(self.view.controles['janela_principal'])
 
@@ -891,15 +830,3 @@ class Funcoes:
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
-
-    # --- Funções da Janela de Logs
-    def abrir_logs(self):
-        arquivo = self.view.controles['cmb_selecao'].get()
-        if platform.system() == "Windows":
-            #arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
-            subprocess.run(["notepad", arquivo])
-        elif platform.system() == "Linux":
-            #arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
-            subprocess.run(["xdg-open", log_files / arquivo])  # ou "gedit"
-        else:
-            print("Sistema não suportado")
