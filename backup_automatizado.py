@@ -3,8 +3,6 @@ from datetime import datetime
 from time import sleep
 
 import dados_tinydb, copiar_arquivos
-from arquivo_log import limpar_logs
-
 
 # --- Inicialização dos dados ---
 
@@ -29,7 +27,6 @@ def conferir_horario():
         sleep(60)
 
 def executar_backup(hora_atual):
-    limpar_logs()
     carregar_dados = dados_tinydb.carregar_dados_tarefa()
     lista_nomes = list(carregar_dados['tarefas'].keys())
     executar_tarefa = []

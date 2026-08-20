@@ -1,4 +1,3 @@
-import logging
 import os
 import platform
 import re
@@ -15,31 +14,8 @@ from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
 from janela_excluir_tarefa import JanelaExcluirTarefa
 
-# --- Registro de erros ---
-arquivo_erro = estilo.ARQUIVO_ERRO
-
-# Pastas de configuração Windows
-
-if platform.system() == 'Linux':
-
-    logging.basicConfig(
-        filename=f"{estilo.home_dir}/log/{arquivo_erro}",        # nome do arquivo
-        level=logging.ERROR,         # nível de log
-        format="%(asctime)s - %(levelname)s - %(message)s")
-
-elif platform.system() == 'Windows':
-    if not os.path.exists(f"c:/temp"):
-        os.mkdir(f"c:/temp")
-
-    logging.basicConfig(
-        filename=f"c:/temp/{arquivo_erro}",  # nome do arquivo
-        level=logging.ERROR,  # nível de log
-        format="%(asctime)s - %(levelname)s - %(message)s")
-
 # --- Inicialização de variáveis ---
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
-agora = datetime.now()
-hora_formatada = agora.strftime("%H:%M:%S")
 pasta_origem = []
 pasta_destino = []
 editando_dados = False

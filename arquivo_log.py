@@ -20,6 +20,7 @@ def gerar_arquivo_log():
     log_files.mkdir(exist_ok=True)
     nome_arquivo = f"{datetime.now():%Y%m%d_%H%M}.log"
     caminho_log = log_files / nome_arquivo
+    limpar_logs()
 
     return caminho_log
 
