@@ -59,7 +59,7 @@ def tamanho_pasta(view, pastas_origem, liberar):
         for item in ver_pasta.rglob("*"):
             if item.is_file():
                 total_arquivos += 1
-                tamanho_total += item.stat().st_size
+                tamanho_total += item.stat(follow_symlinks=False).st_size
 
     lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].config(text=formatar_tamanho(tamanho_total)))
 
@@ -135,6 +135,7 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
     lbl_execucao.after(0, lambda: view.controles['lbl_multi_execucao'].config(text=""))
 
 def copiando_arquivos(origem, destino, view):
+    caminho_log = gerar_arquivo_log()
     global cancelar, pausar, contador, total_arquivos, soma
     lbl_andamento = view.controles['lbl_multi_andamento']
     lbl_copiado_tamanho = view.controles['lbl_copiado_tamanho']
@@ -148,21 +149,29 @@ def copiando_arquivos(origem, destino, view):
 
     for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
         destino_final = destino / Path(raiz).relative_to(origem)
-        if Path(raiz).is_dir():
-            destino_final.mkdir(parents=True, exist_ok=True)
+        try:
+            if Path(raiz).is_dir():
+                destino_final.mkdir(parents=True, exist_ok=True)
 
-        for f in files:
-            origem_arquivo = Path(raiz) / f
-            soma += origem_arquivo.stat().st_size
-            destino_arquivo = destino / Path(raiz).relative_to(origem) / f
-            lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].config(text=f"{formatar_tamanho(origem_arquivo.stat().st_size)} -> {origem_arquivo}"))
-            lbl_copiado_tamanho.after(0, lambda: view.controles['lbl_copiado_tamanho'].config(text=formatar_tamanho(soma)))
+            for f in files:
+                origem_arquivo = Path(raiz) / f
+                try:
+                    # follow_symlinks=False evita tentar resolver atalhos/symlinks quebrados
+                    soma += origem_arquivo.stat(follow_symlinks=False).st_size
+                    destino_arquivo = destino / Path(raiz).relative_to(origem) / f
+                    lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].config(text=f"{formatar_tamanho(origem_arquivo.stat().st_size)} -> {origem_arquivo}"))
+                    lbl_copiado_tamanho.after(0, lambda: view.controles['lbl_copiado_tamanho'].config(text=formatar_tamanho(soma)))
 
-            copiar(origem_arquivo, destino_arquivo)
+                    copiar(origem_arquivo, destino_arquivo)
+                except Exception as e:
+                    erro_encontrado = True
+                    registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> {origem_arquivo}")
 
-            if liberar_total:
-                atualizar_barra(contador, total_arquivos, view.controles['progress_canvas'])
-            contador += 1
+                if liberar_total:
+                    atualizar_barra(contador, total_arquivos, view.controles['progress_canvas'])
+                contador += 1
+        except Exception as e:
+            registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
 
     print("Executado com sucesso")
 
@@ -180,17 +189,20 @@ def inicar_copia_automatizada(pastas_origem, pastas_destino):
 
         for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
             destino_final = destino / Path(raiz).relative_to(origem)
-            if Path(raiz).is_dir():
-                destino_final.mkdir(parents=True, exist_ok=True)
+            try:
+                if Path(raiz).is_dir():
+                    destino_final.mkdir(parents=True, exist_ok=True)
 
-            for f in files:
-                origem_arquivo = Path(raiz) / f
-                destino_arquivo = destino / Path(raiz).relative_to(origem) / f
+                for f in files:
+                    origem_arquivo = Path(raiz) / f
+                    destino_arquivo = destino / Path(raiz).relative_to(origem) / f
 
-                try:
-                    copiar(origem_arquivo, destino_arquivo)
-                except Exception as e:
-                    registrar_log(caminho_log, f"Erro ao copiar: {e} {origem_arquivo}")
+                    try:
+                        copiar(origem_arquivo, destino_arquivo)
+                    except Exception as e:
+                        registrar_log(caminho_log, f"Erro ao copiar: {e} {origem_arquivo}")
+            except Exception as e:
+                registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
 
         registrar_log(caminho_log, "Processo finalizado.\n" + ("_" * 40))
 
@@ -199,8 +211,8 @@ def inicar_copia_automatizada(pastas_origem, pastas_destino):
 def copiar(origem_arquivo, destino_arquivo):
     # 1. Se o arquivo não existe no destino, copia direto
     if not destino_arquivo.is_file():
-        shutil.copy2(origem_arquivo, destino_arquivo)
+        shutil.copy2(origem_arquivo, destino_arquivo, follow_symlinks=False)
 
     # 2. Se ele existe, compara as datas de modificação
     elif origem_arquivo.stat().st_mtime > destino_arquivo.stat().st_mtime:
-        shutil.copy2(origem_arquivo, destino_arquivo)
+        shutil.copy2(origem_arquivo, destino_arquivo, follow_symlinks=False)
