@@ -1,11 +1,16 @@
 import os
 import shutil
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tkinter import messagebox
 
 import dados_tinydb
 from arquivo_log import gerar_arquivo_log, registrar_log
+
+# Aumenta o buffer interno do Windows no shutil para 16MB (o padrão é 64KB)
+# Isso reduz as chamadas de sistema e evita que o cache esvazie, mitigando as pausas.
+shutil._WINDOWS_INTERNAL_BUFFER_SIZE = 16 * 1024 * 1024
 
 # Variável
 tarefas_executando = []
@@ -117,8 +122,6 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
         # / une caminhos automaticamente independente do S.O.
         pasta_destino_final = Path(destino_base) / caminho_origem.name
 
-        print(f"Iniciando cópia...{i}\n")
-
         # Atualização segura do Tkinter vindo de Thread
         lbl_andamento.after(
             0,
@@ -139,15 +142,16 @@ def copiando_arquivos(origem, destino, view):
     global cancelar, pausar, contador, total_arquivos, soma
     lbl_andamento = view.controles['lbl_multi_andamento']
     lbl_copiado_tamanho = view.controles['lbl_copiado_tamanho']
-    if pausar:
-        messagebox.showinfo("Pausa", "Tarefa pausada")
-        pausar = False
-
-    if cancelar:
-        print("Tarefa encerrada")
-        return
 
     for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
+        if pausar:
+            messagebox.showinfo("Pausa", "Tarefa pausada")
+            pausar = False
+
+        if cancelar:
+            print("Tarefa encerrada")
+            return
+
         destino_final = destino / Path(raiz).relative_to(origem)
         try:
             if Path(raiz).is_dir():
@@ -173,8 +177,6 @@ def copiando_arquivos(origem, destino, view):
         except Exception as e:
             registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
 
-    print("Executado com sucesso")
-
 # --- Procedimento de cópia automatizada ---
 def inicar_copia_automatizada(pastas_origem, pastas_destino):
     caminho_log = gerar_arquivo_log()
@@ -187,26 +189,26 @@ def inicar_copia_automatizada(pastas_origem, pastas_destino):
 
         registrar_log(caminho_log, f"Copiando pasta {origem}")
 
-        for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
-            destino_final = destino / Path(raiz).relative_to(origem)
-            try:
-                if Path(raiz).is_dir():
-                    destino_final.mkdir(parents=True, exist_ok=True)
+        # Executa a cópia concorrente
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
+                destino_final = destino / Path(raiz).relative_to(origem)
+                try:
+                    if Path(raiz).is_dir():
+                        destino_final.mkdir(parents=True, exist_ok=True)
 
-                for f in files:
-                    origem_arquivo = Path(raiz) / f
-                    destino_arquivo = destino / Path(raiz).relative_to(origem) / f
+                    for f in files:
+                        origem_arquivo = Path(raiz) / f
+                        destino_arquivo = destino / Path(raiz).relative_to(origem) / f
 
-                    try:
-                        copiar(origem_arquivo, destino_arquivo)
-                    except Exception as e:
-                        registrar_log(caminho_log, f"Erro ao copiar: {e} {origem_arquivo}")
-            except Exception as e:
-                registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
+                        try:
+                            executor.submit(copiar, origem_arquivo, destino_arquivo)
+                        except Exception as e:
+                            registrar_log(caminho_log, f"[ERRO] ao copiar: {e} {origem_arquivo}")
+                except Exception as e:
+                    registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
 
         registrar_log(caminho_log, "Processo finalizado.\n" + ("_" * 40))
-
-    print("Executado com sucesso")
 
 def copiar(origem_arquivo, destino_arquivo):
     # 1. Se o arquivo não existe no destino, copia direto
