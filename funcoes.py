@@ -1,6 +1,8 @@
 import os
 import platform
 import re
+import threading
+from time import sleep
 
 from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
@@ -185,6 +187,7 @@ class Funcoes:
         # --- Inicialização dos dados ---
         nome_tarefa = self.carregar_cmb_selecao()
         self.atualizar_informacoes(nome_tarefa)
+        self.verificar_tarefa_executando()
 
         # --- Posição da janela principal ---
         largura = 342
@@ -806,3 +809,27 @@ class Funcoes:
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
+
+    def verificar_tarefa_executando(self):
+        executando = threading.Thread(
+            target=self.tarefa_executando,
+            daemon=True,
+        )
+        executando.start()
+
+    def tarefa_executando(self):
+        lbl_multi_execucao = self.view.controles['lbl_multi_execucao']
+        global carregar_dados
+        while True:
+            carregar_dados = dados_tinydb.carregar_dados_tarefa()
+            lista_nomes = list(carregar_dados['tarefas'].keys())
+            tarefas_executando = []
+            for nome_tarefa in lista_nomes:
+                executando = carregar_dados['tarefas'][nome_tarefa]['executando']
+                if executando:
+                    tarefas_executando.append(nome_tarefa)
+
+            lista_executando = "\n".join([f"{item}" for item in tarefas_executando])
+            lbl_multi_execucao.after(0, lambda: self.view.controles['lbl_multi_execucao'].config(text=lista_executando))
+
+            sleep(60)
