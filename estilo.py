@@ -12,6 +12,7 @@ home_dir = os.path.expanduser('~')
 programa_dir = f"{home_dir}/.backup agendado"
 notas = f"{home_dir}/.backup agendado/notas"
 log_files = Path(f"{home_dir}/.backup agendado/logs")
+log_erros = Path(f"{home_dir}/.backup agendado/erros")
 
 if not os.path.exists(programa_dir):
     os.mkdir(programa_dir)
