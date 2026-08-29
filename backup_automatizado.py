@@ -38,8 +38,10 @@ def executar_backup(hora_atual):
             executar_tarefa.append(nome_tarefa)
 
     for nome_tarefa in executar_tarefa:
-        dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'executando', True)
-        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
-        pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
-        copiar_arquivos.inicar_copia_automatizada(pastas_origem, pastas_destino)
-        dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'executando', False)
+        desabilitar = carregar_dados['tarefas'][nome_tarefa]['desabilitar_tarefa']
+        if not desabilitar:
+            dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'executando', True)
+            pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
+            pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
+            copiar_arquivos.inicar_copia_automatizada(pastas_origem, pastas_destino)
+            dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'executando', False)
