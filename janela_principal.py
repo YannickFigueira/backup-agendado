@@ -20,10 +20,6 @@ class JanelaPrincipal:
 
     def _criar_layout(self):
         self.controles['janela_principal'] = self.janela_principal
-        # Usando o Pillow para carregar o PNG com segurança
-        imagem_pil = Image.open("imagens/backup.png")
-        self.icon = ImageTk.PhotoImage(imagem_pil)
-        self.janela_principal.iconphoto(True, self.icon)
 
         ## Painel da janela
         self.frame_controls = ttk.Frame(self.janela_principal)

@@ -1,11 +1,19 @@
+"""Módulo funcoes do sistema de Backup Agendado.
+
+Este módulo gerencia toda a funcionalidade do programa
+"""
 import os
 import platform
 import re
+import sys
 import threading
+import time
 from time import sleep
 
 from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
+from pystray import Icon, Menu, MenuItem
+from PIL import Image
 from screeninfo import get_monitors
 
 import verificarversao, dados_tinydb, copiar_arquivos, estilo
@@ -37,6 +45,9 @@ excluir_tarefa_aberta = False
 
 # --- Funções de controle geral ---
 def selecionar_pasta():
+    """
+    :return:
+    """
     pasta = filedialog.askdirectory(title="Selecione uma pasta")
     if pasta:  # se o usuário não cancelar
         return pasta
@@ -45,6 +56,13 @@ def selecionar_pasta():
 
 ## Container
 def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
+    """
+    :param janela_container:
+    :param texto:
+    :param linha:
+    :param espacox:
+    :param espacoy:
+    """
     # 1. Criamos um container invisível para envelopar o separador completo
     container = ttk.Frame(janela_container)
     container.grid(row=linha, columnspan=6, sticky="ew", padx=espacox, pady=espacoy)
@@ -54,7 +72,7 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
     container.columnconfigure(2, weight=1)
 
     # 2. Linha da Esquerda
-    sep_esquerda = ttk.Separator(container, orient="horizontal")
+    sep_esquerda = ttk.Separator(container)
     sep_esquerda.grid(row=0, column=0, sticky="ew", padx=(0, 10))
 
     # 3. O Texto Centralizado (com peso Bold/Negrito)
@@ -63,11 +81,14 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
     label_texto.grid(row=0, column=1, sticky="ne")
 
     # 4. Linha da Direita
-    sep_direita = ttk.Separator(container, orient="horizontal")
+    sep_direita = ttk.Separator(container)
     sep_direita.grid(row=0, column=2, sticky="ew", padx=(10, 0))
 
 ## Notas da versão
 def extrair_ultima_versao_changelog():
+    """
+    :return:
+    """
     caminho_arquivo = "CHANGELOG.md"
     if platform.system() == "Windows":
         caminho_arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
@@ -79,7 +100,7 @@ def extrair_ultima_versao_changelog():
         print("Sistema não suportado")
 
     try:
-        with open(caminho_arquivo, "r", encoding="utf-8") as f:
+        with open(caminho_arquivo, encoding="utf-8") as f:
             conteudo = f.read()
 
         # Expressão Regular explicada:
@@ -101,6 +122,7 @@ def extrair_ultima_versao_changelog():
         return "Arquivo changelog.md não encontrado."
 
 def visitar_site():
+    """Gera mensagem para visitar a página"""
     pagina = f"https://github.com/YannickFigueira"
     resposta = messagebox.askyesno("Sobre", f"{estilo.NOME_PROGRAMA} {estilo.VERSION}\n"
                                             f"Desenvolvedor YannickFigueira\n"
@@ -110,6 +132,10 @@ def visitar_site():
         verificarversao.webbrowser.open(pagina)
 
 def verificar_tarefas_existentes(valores_atuais):
+    """
+    :param valores_atuais:
+    :return:
+    """
     nova_tarefa = "tarefa"
 
     # 1. Filtra APENAS os números das strings que começam estritamente com 'tarefa' seguido de dígitos
@@ -129,6 +155,7 @@ def verificar_tarefas_existentes(valores_atuais):
     return f"{nova_tarefa}{proximo_indice}"
 
 def pegar_resolucao():
+    """:return:"""
     monitors = get_monitors()
     first = None
 
@@ -148,7 +175,6 @@ def pegar_resolucao():
     return first
 
 def registrar_log(caminho_log, mensagem):
-
     """Abre o arquivo no modo append ('a') e escreve a mensagem com timestamp."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -157,8 +183,32 @@ def registrar_log(caminho_log, mensagem):
     with open(caminho_log, mode="a", encoding="utf-8") as arquivo:
         arquivo.write(f"[{timestamp}] {mensagem}\n")
 
+
+def obter_caminho_recurso(caminho_relativo: str) -> str:
+    """
+    Retorna o caminho absoluto para recursos, funcionando em ambiente de
+    desenvolvimento, empacotado via PyInstaller ou instalado via .deb no Linux.
+    """
+    # 1. Se estiver rodando empacotado via PyInstaller
+    if getattr(sys, 'frozen', False):
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        caminho_embutido = os.path.join(base_path, caminho_relativo)
+        if os.path.exists(caminho_embutido):
+            return caminho_embutido
+
+    # 2. Se for o pacote .deb instalado no Linux (/usr/share)
+    caminho_sistema = os.path.join("/usr/share/backup-agendado", os.path.basename(caminho_relativo))
+    if os.path.exists(caminho_sistema):
+        return caminho_sistema
+
+    # 3. Fallback: Desenvolvimento local (caminho relativo à pasta do script)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, caminho_relativo)
+
 class Funcoes:
+    """Classe da função principal"""
     def __init__(self, view):
+        self.icon_tray = None
         self.view = view
 
         # Teste dos dados
@@ -187,7 +237,11 @@ class Funcoes:
         # --- Inicialização dos dados ---
         nome_tarefa = self.carregar_cmb_selecao()
         self.atualizar_informacoes(nome_tarefa)
-        self.verificar_tarefa_executando()
+        if not nome_tarefa == "inicial":
+            self.verificar_tarefa_executando()
+            self.esconder_janela()
+
+        self.criar_bandeja()
 
         # --- Posição da janela principal ---
         largura = 342
@@ -218,7 +272,7 @@ class Funcoes:
                                     command=lambda: self.abrir_janela_logs_backup())
         # Mudar comado para withdraw
         self.view.controles['menu_arquivo'].add_command(label="Sair",
-                                                        command=lambda: self.view.controles['janela_principal'].quit()) # Mudar para withdraw
+                                                        command=lambda: self.fechar_programa()) # Mudar para withdraw
 
         # -- Menu Ajuda --
         self.view.controles['menu_ajuda'].add_command(label="Verificar atualização",
@@ -228,7 +282,7 @@ class Funcoes:
         self.view.controles['menu_ajuda'].add_command(label="Sobre", command=lambda: visitar_site())
 
         # --- Controle da Janela Principal ---
-        self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.fechar_janelas('janela_principal'))
+        self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
         criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
@@ -239,9 +293,8 @@ class Funcoes:
         self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_informacoes(self.view.controles['cmb_selecao'].get()))
 
         if nome_tarefa == "inicial":
-            if nome_tarefa == "inicial":
-                messagebox.showinfo("Aviso", "Insira a primeira tarefa")
-                self.abrir_janela_configuracoes(nome_tarefa)
+            messagebox.showinfo("Aviso", "Insira a primeira tarefa")
+            self.abrir_janela_configuracoes(nome_tarefa)
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
@@ -271,8 +324,8 @@ class Funcoes:
         # --- Controles da janela Nova Tarefa ---
         self.view.controles['janela_nova_tarefa'].protocol("WM_DELETE_WINDOW",
                                                             lambda: self.fechar_janelas('janela_nova_tarefa'))
-        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
-        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_pastas('txt_origem'))
+        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_pastas('txt_destino'))
         self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_nova_tarefa())
         self.view.controles['btn_salvar'].config(command=lambda: self.gravar_pastas())
 
@@ -281,8 +334,8 @@ class Funcoes:
         # --- Controles da janela Alterar Pastas ---
         self.view.controles['janela_alterar_pastas'].protocol("WM_DELETE_WINDOW",
                                                            lambda: self.fechar_janelas('janela_alterar_pastas'))
-        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_origem())
-        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_destino())
+        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_pastas('txt_origem'))
+        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_pastas('txt_destino'))
 
     # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
     def _vincular_excluir_tarefa(self):
@@ -305,13 +358,97 @@ class Funcoes:
 
     # --- Funcionalidade geral ---
     # Ações da janela
-    def selecionar_origem(self):
-        self.view.controles['txt_origem'].delete(0, "end")
-        self.view.controles['txt_origem'].insert(0, selecionar_pasta())
+    def selecionar_pastas(self, controle):
+        self.view.controles[controle].delete(0, "end")
+        self.view.controles[controle].insert(0, selecionar_pasta())
 
-    def selecionar_destino(self):
-        self.view.controles['txt_destino'].delete(0, "end")
-        self.view.controles['txt_destino'].insert(0, selecionar_pasta())
+    def esconder_janela(self):
+        self.view.controles['janela_principal'].withdraw()
+
+    def restaurar_janela(self):
+        self.view.controles['janela_principal'].deiconify()
+
+    def fechar_programa(self, icon=None):
+        sistema = platform.system()
+
+        if sistema == "Linux":
+            # 1. Oculta e destrói os objetos Qt no Linux
+            if hasattr(self, 'qt_tray') and self.qt_tray is not None:
+                self.qt_tray.hide()
+                self.qt_tray.deleteLater()
+                self.qt_tray = None
+
+            if hasattr(self, 'qt_app') and self.qt_app is not None:
+                self.qt_app.quit()
+                self.qt_app = None
+
+        else:
+            # Lógica do Windows (pystray)
+            tray_obj = icon or getattr(self, 'icon_tray', None)
+            if tray_obj and hasattr(tray_obj, 'stop'):
+                tray_obj.stop()
+
+        # 2. Destrói a janela e finaliza o processo
+        janela_principal = self.view.controles.get('janela_principal')
+        if janela_principal:
+            janela_principal.destroy()
+
+        # Encerra o processo de vez (Zero zumbis em segundo plano)
+        os._exit(0)
+
+    def _processar_eventos_qt(self):
+        """Processa a fila do Qt dentro do loop do Tkinter de forma não-bloqueante."""
+        if hasattr(self, 'qt_app') and self.qt_app is not None:
+            self.qt_app.processEvents()
+
+            # Pega a janela principal do Tkinter
+            janela = self.view.controles.get('janela_principal')
+            if janela and janela.winfo_exists():
+                janela.after(150, self._processar_eventos_qt)
+
+    def criar_bandeja(self):
+        sistema = platform.system()
+        caminho_imagem = obter_caminho_recurso("imagens/backup.png")
+
+        if sistema == "Linux":
+            from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+            from PyQt6.QtGui import QIcon
+
+            # 1. Cria/Recupera a instância do Qt na THREAD PRINCIPAL
+            self.qt_app = QApplication.instance() or QApplication(sys.argv)
+            self.qt_app.setQuitOnLastWindowClosed(False)
+
+            # 2. Instancia o ícone
+            self.qt_tray = QSystemTrayIcon(QIcon(caminho_imagem))
+            menu = QMenu()
+
+            acao1 = menu.addAction("Janela Principal")
+            acao1.triggered.connect(self.restaurar_janela)
+
+            acao2 = menu.addAction("Sair")
+            acao2.triggered.connect(self.fechar_programa)
+
+            self.qt_tray.setContextMenu(menu)
+            self.qt_tray.show()
+
+            # 3. Processa os eventos do Qt periodicamente via Tkinter (Sem travar!)
+            self._processar_eventos_qt()
+
+            return self.qt_tray
+
+        else:
+            # Mantém pystray para Windows
+            from pystray import Icon, MenuItem, Menu
+            from PIL import Image
+
+            image = Image.open(caminho_imagem)
+            menu = Menu(
+                MenuItem("Janela Principal", self.restaurar_janela),
+                MenuItem("Sair", self.fechar_programa),
+            )
+            self.icon_tray = Icon("BackupAgendado", image, estilo.NOME_PROGRAMA, menu)
+            self.icon_tray.run_detached()
+            return self.icon_tray
 
     # --- Funções das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):
