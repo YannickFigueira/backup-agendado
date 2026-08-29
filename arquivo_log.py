@@ -15,7 +15,7 @@ def abrir_logs(view):
     else:
         print("Sistema não suportado")
 
-def gerar_arquivo_log():
+def gerar_arquivo_log(pasta_log):
     # Gera o nome dinâmico do arquivo
     log_files.mkdir(exist_ok=True)
     nome_arquivo = f"{datetime.now():%Y%m%d_%H%M}.log"
