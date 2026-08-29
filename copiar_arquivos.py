@@ -17,7 +17,7 @@ tarefas_executando = []
 cancelar = False
 pausar = False
 liberar_total = False
-total_arquivos = 0
+tamanho_total = 0
 contador = 1
 soma = 0
 
@@ -52,18 +52,16 @@ def iniciar_calculo_tamanho(view, pastas_origem, liberar):
     t.start()
 
 def tamanho_pasta(view, pastas_origem, liberar):
-    global total_arquivos, liberar_total
+    global tamanho_total, liberar_total
     lbl_tamanho_exibir = view.controles['lbl_tamanho_exibir']
     lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].config(text="Atualizando..."))
     tamanho_total = 0
-    total_arquivos = 0
     for pasta in pastas_origem:
         ver_pasta = Path(pasta)
 
         # Iteramos pelos arquivos para contar e somar o tamanho simultaneamente
         for item in ver_pasta.rglob("*"):
             if item.is_file():
-                total_arquivos += 1
                 tamanho_total += item.stat(follow_symlinks=False).st_size
 
     lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].config(text=formatar_tamanho(tamanho_total)))
@@ -139,7 +137,7 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
 
 def copiando_arquivos(origem, destino, view):
     caminho_log = gerar_arquivo_log()
-    global cancelar, pausar, contador, total_arquivos, soma
+    global cancelar, pausar, tamanho_total, soma
     lbl_andamento = view.controles['lbl_multi_andamento']
     lbl_copiado_tamanho = view.controles['lbl_copiado_tamanho']
 
@@ -172,8 +170,7 @@ def copiando_arquivos(origem, destino, view):
                     registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> {origem_arquivo}")
 
                 if liberar_total:
-                    atualizar_barra(contador, total_arquivos, view.controles['progress_canvas'])
-                contador += 1
+                    atualizar_barra(soma, tamanho_total, view.controles['progress_canvas'])
         except Exception as e:
             registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
 
