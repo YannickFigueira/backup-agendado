@@ -8,7 +8,7 @@ def abrir_logs(view):
     arquivo = view.controles['cmb_selecao'].get()
     if platform.system() == "Windows":
         #arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
-        subprocess.run(["notepad", arquivo])
+        subprocess.run(["notepad", log_files / arquivo])
     elif platform.system() == "Linux":
         #arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
         subprocess.run(["xdg-open", log_files / arquivo])  # ou "gedit"
