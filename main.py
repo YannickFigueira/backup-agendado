@@ -19,7 +19,7 @@ if sys.platform.startswith("win"):
         if hasattr(ctypes, 'windll'):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
     except Exception as e:
-        caminho_log = gerar_arquivo_log()
+        caminho_log = gerar_arquivo_log(estilo.log_erros)
         registrar_log(caminho_log, e)
 
 parser = argparse.ArgumentParser(prog="backup-agendado")

@@ -7,6 +7,7 @@ from tkinter import messagebox
 
 import dados_tinydb
 from arquivo_log import gerar_arquivo_log, registrar_log
+from estilo import log_files
 
 # Aumenta o buffer interno do Windows no shutil para 16MB (o padrão é 64KB)
 # Isso reduz as chamadas de sistema e evita que o cache esvazie, mitigando as pausas.
@@ -136,7 +137,7 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
     lbl_execucao.after(0, lambda: view.controles['lbl_multi_execucao'].config(text=""))
 
 def copiando_arquivos(origem, destino, view):
-    caminho_log = gerar_arquivo_log()
+    caminho_log = gerar_arquivo_log(log_files)
     global cancelar, pausar, tamanho_total, soma
     lbl_andamento = view.controles['lbl_multi_andamento']
     lbl_copiado_tamanho = view.controles['lbl_copiado_tamanho']
@@ -176,7 +177,7 @@ def copiando_arquivos(origem, destino, view):
 
 # --- Procedimento de cópia automatizada ---
 def inicar_copia_automatizada(pastas_origem, pastas_destino):
-    caminho_log = gerar_arquivo_log()
+    caminho_log = gerar_arquivo_log(log_files)
     registrar_log(caminho_log, "Iniciando processo de backup.")
     # zip alinha origem/destino; enumerate fornece o índice 'i'
     for i, (origem, destino_base) in enumerate(zip(pastas_origem, pastas_destino)):

@@ -17,9 +17,9 @@ def abrir_logs(view):
 
 def gerar_arquivo_log(pasta_log):
     # Gera o nome dinâmico do arquivo
-    log_files.mkdir(exist_ok=True)
+    pasta_log.mkdir(exist_ok=True)
     nome_arquivo = f"{datetime.now():%Y%m%d_%H%M}.log"
-    caminho_log = log_files / nome_arquivo
+    caminho_log = pasta_log / nome_arquivo
     limpar_logs()
 
     return caminho_log

@@ -7,17 +7,15 @@ import platform
 import re
 import sys
 import threading
-import time
+import tkinter as tk
 from time import sleep
 
 from tkinter import filedialog, ttk, messagebox
 from datetime import datetime
-from pystray import Icon, Menu, MenuItem
-from PIL import Image
 from screeninfo import get_monitors
 
 import verificarversao, dados_tinydb, copiar_arquivos, estilo
-from arquivo_log import abrir_logs, ler_pasta_log
+from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
@@ -356,101 +354,7 @@ class Funcoes:
         self.view.controles['cmb_selecao'].current(0)
         self.view.controles['btn_abrir_logs'].config(command=lambda: abrir_logs(self.view))
 
-    # --- Funcionalidade geral ---
-    # Ações da janela
-    def selecionar_pastas(self, controle):
-        self.view.controles[controle].delete(0, "end")
-        self.view.controles[controle].insert(0, selecionar_pasta())
-
-    def esconder_janela(self):
-        self.view.controles['janela_principal'].withdraw()
-
-    def restaurar_janela(self):
-        self.view.controles['janela_principal'].deiconify()
-
-    def fechar_programa(self, icon=None):
-        sistema = platform.system()
-
-        if sistema == "Linux":
-            # 1. Oculta e destrói os objetos Qt no Linux
-            if hasattr(self, 'qt_tray') and self.qt_tray is not None:
-                self.qt_tray.hide()
-                self.qt_tray.deleteLater()
-                self.qt_tray = None
-
-            if hasattr(self, 'qt_app') and self.qt_app is not None:
-                self.qt_app.quit()
-                self.qt_app = None
-
-        else:
-            # Lógica do Windows (pystray)
-            tray_obj = icon or getattr(self, 'icon_tray', None)
-            if tray_obj and hasattr(tray_obj, 'stop'):
-                tray_obj.stop()
-
-        # 2. Destrói a janela e finaliza o processo
-        janela_principal = self.view.controles.get('janela_principal')
-        if janela_principal:
-            janela_principal.destroy()
-
-        # Encerra o processo de vez (Zero zumbis em segundo plano)
-        os._exit(0)
-
-    def _processar_eventos_qt(self):
-        """Processa a fila do Qt dentro do loop do Tkinter de forma não-bloqueante."""
-        if hasattr(self, 'qt_app') and self.qt_app is not None:
-            self.qt_app.processEvents()
-
-            # Pega a janela principal do Tkinter
-            janela = self.view.controles.get('janela_principal')
-            if janela and janela.winfo_exists():
-                janela.after(150, self._processar_eventos_qt)
-
-    def criar_bandeja(self):
-        sistema = platform.system()
-        caminho_imagem = obter_caminho_recurso("imagens/backup.png")
-
-        if sistema == "Linux":
-            from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
-            from PyQt6.QtGui import QIcon
-
-            # 1. Cria/Recupera a instância do Qt na THREAD PRINCIPAL
-            self.qt_app = QApplication.instance() or QApplication(sys.argv)
-            self.qt_app.setQuitOnLastWindowClosed(False)
-
-            # 2. Instancia o ícone
-            self.qt_tray = QSystemTrayIcon(QIcon(caminho_imagem))
-            menu = QMenu()
-
-            acao1 = menu.addAction("Janela Principal")
-            acao1.triggered.connect(self.restaurar_janela)
-
-            acao2 = menu.addAction("Sair")
-            acao2.triggered.connect(self.fechar_programa)
-
-            self.qt_tray.setContextMenu(menu)
-            self.qt_tray.show()
-
-            # 3. Processa os eventos do Qt periodicamente via Tkinter (Sem travar!)
-            self._processar_eventos_qt()
-
-            return self.qt_tray
-
-        else:
-            # Mantém pystray para Windows
-            from pystray import Icon, MenuItem, Menu
-            from PIL import Image
-
-            image = Image.open(caminho_imagem)
-            menu = Menu(
-                MenuItem("Janela Principal", self.restaurar_janela),
-                MenuItem("Sair", self.fechar_programa),
-            )
-            self.icon_tray = Icon("BackupAgendado", image, estilo.NOME_PROGRAMA, menu)
-            self.icon_tray.run_detached()
-            return self.icon_tray
-
-    # --- Funções das janelas ---
+    # --- Execução das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):
         global editando_novos_dados, configuracao_aberta, carregar_dados
         configuracao_aberta = True
@@ -577,6 +481,50 @@ class Funcoes:
 
         logica.view.controles['janela_logs_backup'].wait_window()
 
+    # --- Funções Gerais ---
+    def verificar_tarefa_executando(self):
+        executando = threading.Thread(
+            target=self.tarefa_executando,
+            daemon=True,
+        )
+        executando.start()
+
+    def tarefa_executando(self):
+        global carregar_dados
+        while True:
+            try:
+                # 1. Verifica se o widget ainda existe na interface
+                lbl_multi_execucao = self.view.controles.get('lbl_multi_execucao')
+                if not lbl_multi_execucao or not lbl_multi_execucao.winfo_exists():
+                    break  # Encerra o loop da thread se a janela foi destruída
+
+                carregar_dados = dados_tinydb.carregar_dados_tarefa()
+                lista_nomes = list(carregar_dados['tarefas'].keys())
+                tarefas_executando = []
+
+                for nome_tarefa in lista_nomes:
+                    executando = carregar_dados['tarefas'][nome_tarefa]['executando']
+                    if executando:
+                        tarefas_executando.append(nome_tarefa)
+
+                lista_executando = "\n".join([f"{item}" for item in tarefas_executando])
+
+                # 2. Protege o agendamento no Tkinter contra encerramentos repentinos
+                try:
+                    lbl_multi_execucao.after(
+                        0,
+                        lambda texto=lista_executando: self.view.controles['lbl_multi_execucao'].config(text=texto)
+                    )
+                except (tk.TclError, RuntimeError):
+                    break  # Tkinter foi fechado, interrompe a thread
+
+            except Exception as e:
+                erros_log = gerar_arquivo_log(estilo.log_erros)
+                registrar_log(erros_log, f"[ERRO] Monitoramento das tarefas -> {e}")
+
+                # 3. Dorme 60 segundos
+            sleep(60)
+
     def fechar_janelas(self, janela):
         global configuracao_aberta, nova_tarefa_aberta, excluir_tarefa_aberta, editando_dados
 
@@ -622,16 +570,115 @@ class Funcoes:
             self.view.controles['txt_origem'].focus_set()
             return False
 
-    def desabiliatar_menus_configuracao(self):
-        self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="disabled")
-        self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
-        self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="disabled")
+    def selecionar_pastas(self, controle):
+        self.view.controles[controle].delete(0, "end")
+        self.view.controles[controle].insert(0, selecionar_pasta())
 
-    def habilitar_edicao(self):
-        global editando_dados
-        editando_dados = True
-        self.view.controles['btn_gravar'].config(state="normal")
-        messagebox.showinfo("Aviso", "Edição habilitada")
+    def esconder_janela(self):
+        self.view.controles['janela_principal'].withdraw()
+
+    def restaurar_janela(self):
+        self.view.controles['janela_principal'].deiconify()
+
+    def fechar_programa(self, icon=None):
+        sistema = platform.system()
+
+        if sistema == "Linux":
+            # 1. Oculta e destrói os objetos Qt no Linux
+            if hasattr(self, 'qt_tray') and self.qt_tray is not None:
+                self.qt_tray.hide()
+                self.qt_tray.deleteLater()
+                self.qt_tray = None
+
+            if hasattr(self, 'qt_app') and self.qt_app is not None:
+                self.qt_app.quit()
+                self.qt_app = None
+
+        else:
+            # Lógica exclusiva para o Windows (pystray + Tkinter)
+            janela_principal = self.view.controles.get('janela_principal')
+
+            # 1. Função interna para encerrar o Tkinter e o processo de forma limpa
+            def encerrar_windows():
+                if janela_principal and janela_principal.winfo_exists():
+                    try:
+                        janela_principal.quit()
+                        janela_principal.destroy()
+                    except Exception:
+                        pass
+                os._exit(0)
+
+            # 2. Agenda a destruição da janela para a Thread Principal do Tkinter
+            if janela_principal and janela_principal.winfo_exists():
+                janela_principal.after(50, encerrar_windows)
+
+            # 3. Encerra o pystray para remover o ícone da barra de tarefas
+            tray_obj = icon or getattr(self, 'icon_tray', None)
+            if tray_obj and hasattr(tray_obj, 'stop'):
+                try:
+                    tray_obj.stop()
+                except Exception:
+                    pass
+
+            # Caso a janela principal já estivesse fechada, mata o processo com um pequeno delay
+            if not (janela_principal and janela_principal.winfo_exists()):
+                import threading
+                threading.Timer(0.1, lambda: os._exit(0)).start()
+
+    def _processar_eventos_qt(self):
+        """Processa a fila do Qt dentro do loop do Tkinter de forma não-bloqueante."""
+        if hasattr(self, 'qt_app') and self.qt_app is not None:
+            self.qt_app.processEvents()
+
+            # Pega a janela principal do Tkinter
+            janela = self.view.controles.get('janela_principal')
+            if janela and janela.winfo_exists():
+                janela.after(150, self._processar_eventos_qt)
+
+    def criar_bandeja(self):
+        sistema = platform.system()
+        caminho_imagem = obter_caminho_recurso("imagens/backup.png")
+
+        if sistema == "Linux":
+            from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+            from PyQt6.QtGui import QIcon
+
+            # 1. Cria/Recupera a instância do Qt na THREAD PRINCIPAL
+            self.qt_app = QApplication.instance() or QApplication(sys.argv)
+            self.qt_app.setQuitOnLastWindowClosed(False)
+
+            # 2. Instancia o ícone
+            self.qt_tray = QSystemTrayIcon(QIcon(caminho_imagem))
+            menu = QMenu()
+
+            acao1 = menu.addAction("Janela Principal")
+            acao1.triggered.connect(self.restaurar_janela)
+
+            acao2 = menu.addAction("Sair")
+            acao2.triggered.connect(self.fechar_programa)
+
+            self.qt_tray.setContextMenu(menu)
+            self.qt_tray.show()
+
+            # 3. Processa os eventos do Qt periodicamente via Tkinter (Sem travar!)
+            self._processar_eventos_qt()
+
+            return self.qt_tray
+
+        else:
+            # Mantém pystray para Windows
+            print('systray')
+            from pystray import Icon, MenuItem, Menu
+            from PIL import Image
+
+            image = Image.open(caminho_imagem)
+            menu = Menu(
+                MenuItem("Janela Principal", self.restaurar_janela),
+                MenuItem("Sair", self.fechar_programa),
+            )
+            self.icon_tray = Icon("BackupAgendado", image, estilo.NOME_PROGRAMA, menu)
+            self.icon_tray.run_detached()
+            return self.icon_tray
 
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):
@@ -646,6 +693,17 @@ class Funcoes:
         self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
 
     # --- Funções da Janela Configurações ---
+    def desabiliatar_menus_configuracao(self):
+        self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="disabled")
+        self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
+        self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="disabled")
+
+    def habilitar_edicao(self):
+        global editando_dados
+        editando_dados = True
+        self.view.controles['btn_gravar'].config(state="normal")
+        messagebox.showinfo("Aviso", "Edição habilitada")
+
     def atualizar_configuracao(self):
         global editando_excluir_dados
         if not editando_novos_dados or editando_dados:
@@ -946,27 +1004,3 @@ class Funcoes:
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
-
-    def verificar_tarefa_executando(self):
-        executando = threading.Thread(
-            target=self.tarefa_executando,
-            daemon=True,
-        )
-        executando.start()
-
-    def tarefa_executando(self):
-        lbl_multi_execucao = self.view.controles['lbl_multi_execucao']
-        global carregar_dados
-        while True:
-            carregar_dados = dados_tinydb.carregar_dados_tarefa()
-            lista_nomes = list(carregar_dados['tarefas'].keys())
-            tarefas_executando = []
-            for nome_tarefa in lista_nomes:
-                executando = carregar_dados['tarefas'][nome_tarefa]['executando']
-                if executando:
-                    tarefas_executando.append(nome_tarefa)
-
-            lista_executando = "\n".join([f"{item}" for item in tarefas_executando])
-            lbl_multi_execucao.after(0, lambda: self.view.controles['lbl_multi_execucao'].config(text=lista_executando))
-
-            sleep(60)
