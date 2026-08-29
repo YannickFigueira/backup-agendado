@@ -38,7 +38,7 @@ if __name__ == "__main__":
         foto = tk.PhotoImage(file=caminho_icone)
 
         # O primeiro parâmetro False força a aplicar especificamente na janela atual
-        root.iconphoto(False, foto)
+        root.iconphoto(True, foto)
         setattr(root, "_icone_ref", foto)
 
     # 2. Cria a parte visual (passando o root e a versão)
