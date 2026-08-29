@@ -20,6 +20,8 @@ if not os.path.exists(notas):
     os.mkdir(notas)
 if not os.path.exists(log_files):
     os.mkdir(log_files)
+if not os.path.exists(log_erros):
+    os.mkdir(log_erros)
 
 # Margens padrão para janelas e frames
 # Medidas
