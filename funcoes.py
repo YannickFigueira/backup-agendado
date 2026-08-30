@@ -473,13 +473,19 @@ class Funcoes:
         excluir_tarefa_aberta = False
 
     def abrir_janela_logs_backup(self):
-        # 1. Cria a parte visual
-        visual = JanelaLogsBackup(self.view.controles['janela_principal'])
+        arquivos_log = ler_pasta_log()
+        if len(arquivos_log) > 0:
+            print("Arquivos logs backup")
+            print(len(arquivos_log))
+            # 1. Cria a parte visual
+            visual = JanelaLogsBackup(self.view.controles['janela_principal'])
 
-        # 2. Cria a lógica e passa a visão para ela controlar
-        logica = Funcoes(visual)
+            # 2. Cria a lógica e passa a visão para ela controlar
+            logica = Funcoes(visual)
 
-        logica.view.controles['janela_logs_backup'].wait_window()
+            logica.view.controles['janela_logs_backup'].wait_window()
+        else:
+            messagebox.showinfo("Aviso", "Nenhum log foi gerado ainda")
 
     # --- Funções Gerais ---
     def verificar_tarefa_executando(self):
