@@ -593,49 +593,53 @@ class Funcoes:
         self.view.controles['janela_principal'].deiconify()
 
     def fechar_programa(self, icon=None):
-        sistema = platform.system()
+        resposta = messagebox.askokcancel("Alerta",
+    "Fechando o programa o backup não será mais executado até que seja iniciado novamente",
+            icon="warning")
+        if resposta:
+            sistema = platform.system()
 
-        if sistema == "Linux":
-            # 1. Oculta e destrói os objetos Qt no Linux
-            if hasattr(self, 'qt_tray') and self.qt_tray is not None:
-                self.qt_tray.hide()
-                self.qt_tray.deleteLater()
-                self.qt_tray = None
+            if sistema == "Linux":
+                # 1. Oculta e destrói os objetos Qt no Linux
+                if hasattr(self, 'qt_tray') and self.qt_tray is not None:
+                    self.qt_tray.hide()
+                    self.qt_tray.deleteLater()
+                    self.qt_tray = None
 
-            if hasattr(self, 'qt_app') and self.qt_app is not None:
-                self.qt_app.quit()
-                self.qt_app = None
+                if hasattr(self, 'qt_app') and self.qt_app is not None:
+                    self.qt_app.quit()
+                    self.qt_app = None
 
-        else:
-            # Lógica exclusiva para o Windows (pystray + Tkinter)
-            janela_principal = self.view.controles.get('janela_principal')
+            else:
+                # Lógica exclusiva para o Windows (pystray + Tkinter)
+                janela_principal = self.view.controles.get('janela_principal')
 
-            # 1. Função interna para encerrar o Tkinter e o processo de forma limpa
-            def encerrar_windows():
+                # 1. Função interna para encerrar o Tkinter e o processo de forma limpa
+                def encerrar_windows():
+                    if janela_principal and janela_principal.winfo_exists():
+                        try:
+                            janela_principal.quit()
+                            janela_principal.destroy()
+                        except Exception:
+                            pass
+                    os._exit(0)
+
+                # 2. Agenda a destruição da janela para a Thread Principal do Tkinter
                 if janela_principal and janela_principal.winfo_exists():
+                    janela_principal.after(50, encerrar_windows)
+
+                # 3. Encerra o pystray para remover o ícone da barra de tarefas
+                tray_obj = icon or getattr(self, 'icon_tray', None)
+                if tray_obj and hasattr(tray_obj, 'stop'):
                     try:
-                        janela_principal.quit()
-                        janela_principal.destroy()
+                        tray_obj.stop()
                     except Exception:
                         pass
-                os._exit(0)
 
-            # 2. Agenda a destruição da janela para a Thread Principal do Tkinter
-            if janela_principal and janela_principal.winfo_exists():
-                janela_principal.after(50, encerrar_windows)
-
-            # 3. Encerra o pystray para remover o ícone da barra de tarefas
-            tray_obj = icon or getattr(self, 'icon_tray', None)
-            if tray_obj and hasattr(tray_obj, 'stop'):
-                try:
-                    tray_obj.stop()
-                except Exception:
-                    pass
-
-            # Caso a janela principal já estivesse fechada, mata o processo com um pequeno delay
-            if not (janela_principal and janela_principal.winfo_exists()):
-                import threading
-                threading.Timer(0.1, lambda: os._exit(0)).start()
+                # Caso a janela principal já estivesse fechada, mata o processo com um pequeno delay
+                if not (janela_principal and janela_principal.winfo_exists()):
+                    import threading
+                    threading.Timer(0.1, lambda: os._exit(0)).start()
 
     def _processar_eventos_qt(self):
         """Processa a fila do Qt dentro do loop do Tkinter de forma não-bloqueante."""
