@@ -387,7 +387,7 @@ class Funcoes:
         nome_tarefa = self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
             messagebox.showinfo("Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
-            self.view.controles['janela_principal'].destroy()
+            self.fechar_programa()
         else:
             configuracao_aberta = False
             nome_tarefa = self.carregar_cmb_selecao()
