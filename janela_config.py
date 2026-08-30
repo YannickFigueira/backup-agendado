@@ -33,6 +33,7 @@ class JanelaConfiguracao:
         self.controles['janela_configuracao'] = self.janela_configuracao
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
         self.janela_configuracao.grab_set()
+        self.janela_configuracao.focus_force()
 
         # 3. Intercepta o clique no botão 'X' de fechar a Toplevel
         def ao_fechar():

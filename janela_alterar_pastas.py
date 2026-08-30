@@ -21,6 +21,7 @@ class JanelaAlterarPastas:
         self.controles['janela_alterar_pastas'] = self.janela_alterar_pastas
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
         self.janela_alterar_pastas.grab_set()
+        self.janela_alterar_pastas.focus_force()
 
 
         ## Painel da janela

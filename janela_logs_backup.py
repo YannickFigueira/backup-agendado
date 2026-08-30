@@ -19,6 +19,9 @@ class JanelaLogsBackup:
     def _criar_layout(self):
         self.controles['janela_logs_backup'] = self.janela_logs_backup
 
+        self.janela_logs_backup.grab_set()
+        self.janela_logs_backup.focus_force()
+
         altura_linha = 10
         self.moldura_log_lista = ttk.Frame(self.janela_logs_backup, width=200, height=220, relief="solid", borderwidth=1)
         self.moldura_log_lista.grid(row=0, rowspan=altura_linha, columnspan=2,

@@ -364,6 +364,8 @@ class Funcoes:
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
 
+        logica.centralizar_janela("janela_configuracao", self.view.controles['janela_principal'])
+
         # --- Inicialização ---
         #nome_tarefa = logica.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
@@ -403,6 +405,7 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+        logica.centralizar_janela("janela_nova_tarefa", self.view.controles['janela_configuracao'])
         if len(pasta_origem) > 0:
             pasta_origem = []
             pasta_destino = []
@@ -428,6 +431,7 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+        logica.centralizar_janela("janela_alterar_pastas", self.view.controles['janela_configuracao'])
 
         # Carregar configuração
         nome_tarefa = self.view.controles['cmb_selecao'].get()
@@ -463,6 +467,7 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
+        logica.centralizar_janela("janela_excluir_tarefa", self.view.controles['janela_configuracao'])
 
         logica.carregar_cmb_selecao()
         logica.view.controles['janela_excluir_tarefa'].wait_window()
@@ -482,6 +487,7 @@ class Funcoes:
 
             # 2. Cria a lógica e passa a visão para ela controlar
             logica = Funcoes(visual)
+            logica.centralizar_janela("janela_logs_backup", self.view.controles['janela_principal'])
 
             logica.view.controles['janela_logs_backup'].wait_window()
         else:
@@ -685,6 +691,28 @@ class Funcoes:
             self.icon_tray = Icon("BackupAgendado", image, estilo.NOME_PROGRAMA, menu)
             self.icon_tray.run_detached()
             return self.icon_tray
+
+    def centralizar_janela(self, janela, parent):
+        """Centraliza a janela 'child' no centro da janela 'parent'."""
+        parent.update_idletasks()
+        self.view.controles[janela].update_idletasks()
+
+        # Dimensões e posição da janela principal
+        p_width = parent.winfo_width()
+        p_height = parent.winfo_height()
+        p_x = parent.winfo_rootx()
+        p_y = parent.winfo_rooty()
+
+        # Dimensões da janela filha
+        c_width = self.view.controles[janela].winfo_reqwidth()
+        c_height = self.view.controles[janela].winfo_reqheight()
+
+        # Cálculo das coordenadas X e Y
+        x = p_x + (p_width // 2) - (c_width // 2)
+        y = p_y + (p_height // 2) - (c_height // 2)
+
+        # Aplica a geometria (Largura x Altura + X + Y)
+        self.view.controles[janela].geometry(f"{c_width}x{c_height}+{x}+{y}")
 
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):

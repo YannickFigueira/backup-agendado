@@ -21,6 +21,7 @@ class JanelaExcluirTarefa:
         self.controles['janela_excluir_tarefa'] = self.janela_excluir_tarefa
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
         self.janela_excluir_tarefa.grab_set()
+        self.janela_excluir_tarefa.focus_force()
 
         ## Painel da janela
         self.frame_campos = ttk.Frame(self.janela_excluir_tarefa)

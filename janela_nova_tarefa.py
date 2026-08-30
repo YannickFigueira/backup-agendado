@@ -21,6 +21,7 @@ class JanelaNovaTarefa:
         self.controles['janela_nova_tarefa'] = self.janela_nova_tarefa
         # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
         self.janela_nova_tarefa.grab_set()
+        self.janela_nova_tarefa.focus_force()
 
         ## Painel da janela
         self.frame_campos = ttk.Frame(self.janela_nova_tarefa)
