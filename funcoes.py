@@ -885,11 +885,11 @@ class Funcoes:
     def adicionar_nova_tarefa(self):
         existe = self.verificar_pastas_existentes()
         if existe:
-            origem = self.view.controles['txt_origem'].get().strip().replace("\\","/")
+            origem = self.view.controles['txt_origem'].get().strip()
             pasta_origem.append(origem)
             # Extrai o nome da última pasta ("Development")
             #nome_pasta = os.path.basename(origem.rstrip("/")) Pegar o nome da pasta de origem
-            pasta_destino.append(f"{os.path.join(self.view.controles['txt_destino'].get().strip().replace("\\", " / "))}")
+            pasta_destino.append(self.view.controles['txt_destino'].get().strip())
 
             self.view.controles['txt_origem'].delete(0, "end")
             self.view.controles['btn_salvar'].config(state="normal")
@@ -918,11 +918,11 @@ class Funcoes:
         existe = self.verificar_pastas_existentes()
         if existe:
             if not editando_adicionar_pasta:
-                origem_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_origem'].get()
-                destino_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_destino'].get()
+                origem_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_origem'].get().strip()
+                destino_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_destino'].get().strip()
             else:
-                origem_pasta.append(self.view.controles['txt_origem'].get())
-                destino_pasta.append(self.view.controles['txt_destino'].get())
+                origem_pasta.append(self.view.controles['txt_origem'].get().strip())
+                destino_pasta.append(self.view.controles['txt_destino'].get().strip())
                 self.view.controles['btn_adicionar_pasta'].config(state="normal")
                 self.view.controles['btn_gravar_adicionar'].config(state="disabled")
 
