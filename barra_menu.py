@@ -1,6 +1,5 @@
 import customtkinter as ctk
 
-import estilo
 from menu_hamburguer import MenuHamburguer
 
 
