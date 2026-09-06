@@ -23,7 +23,6 @@ from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
 from janela_excluir_tarefa import JanelaExcluirTarefa
-from seletor_tempo import TimeSelector
 
 # --- Inicialização de variáveis ---
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
@@ -187,6 +186,24 @@ def pegar_resolucao():
 
     return first
 
+# --- Posição das janelas ---
+largura = 342
+altura = 305
+
+first = pegar_resolucao()
+
+if first is not None:
+    largura_tela = first.width
+    altura_tela = first.height
+else:
+    # Defina um valor padrão de fallback caso não encontre o monitor
+    largura_tela = 1920
+    altura_tela = 1080
+
+# Calcula as posições X e Y para centralizar
+pos_x = int((largura_tela / 2) - largura)
+pos_y = int((altura_tela / 2) - altura)
+
 def registrar_log(caminho_log, mensagem):
     """Abre o arquivo no modo append ('a') e escreve a mensagem com timestamp."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -257,46 +274,37 @@ class Funcoes:
 
         self.criar_bandeja()
 
-        # --- Posição da janela principal ---
-        largura = 342
-        altura = 305
-
-        first = pegar_resolucao()
-
-        if first is not None:
-            largura_tela = first.width
-            altura_tela = first.height
-        else:
-            # Defina um valor padrão de fallback caso não encontre o monitor
-            largura_tela = 1920
-            altura_tela = 1080
-
-        # Calcula as posições X e Y para centralizar
-        pos_x = int((largura_tela / 2) - largura)
-        pos_y = int((altura_tela / 2) - altura)
-
         # Passa apenas +X+Y (ou -X-Y para borda direita/inferior)
         self.view.controles['janela_principal'].geometry(f"+{pos_x}+{pos_y}")
 
+        # --- Controle do Título ---
+        # Permite arrastar a janela clicando no seu frame_titulo customizado
+        self.view.controles['frame_titulo'].bind("<Button-1>", self._iniciar_arraste)
+        self.view.controles['frame_titulo'].bind("<B1-Motion>", lambda e: self._arrastar_janela(e, "janela_principal"))
+        self.view.controles['btn_minimizar'].configure(command=lambda: self.view.controles['janela_principal'].iconify())
+        self.view.controles['btn_fechar'].configure(command=lambda: self.esconder_janela())
+
         # --- Controle do Menu ---
-        # -- Menu Arquivo --
-        self.view.controles['menu_arquivo'].add_command(label="Configurações",
-                                    command=lambda: self.abrir_janela_configuracoes(nome_tarefa))
-        self.view.controles['menu_arquivo'].add_command(label="Logs",
-                                    command=lambda: self.abrir_janela_logs_backup())
+        # --- Menu Arquivo ---
+        self.menu_arquivo = self.view.controles['menu_btn'].adicionar_submenu("Arquivo")
+        self.menu_arquivo.add_command(label="Configurações",
+                                      command=lambda: self.abrir_janela_configuracoes(nome_tarefa))
+        self.menu_arquivo.add_command(label="Logs",
+                                                        command=lambda: self.abrir_janela_logs_backup())
         # Mudar comado para withdraw
-        self.view.controles['menu_arquivo'].add_command(label="Sair",
+        self.menu_arquivo.add_command(label="Sair",
                                                         command=lambda: self.fechar_programa()) # Mudar para withdraw
 
         # -- Menu Ajuda --
-        self.view.controles['menu_ajuda'].add_command(label="Verificar atualização",
+        self.menu_ajuda = self.view.controles['menu_btn'].adicionar_submenu("Ajuda")
+        self.menu_ajuda.add_command(label="Verificar atualização",
                                       command=lambda: verificarversao.consultar_lancamento(estilo.REPO, estilo.VERSION))
-        self.view.controles['menu_ajuda'].add_command(label="Notas da versão",
-              command=lambda: self.view.controles['lbl_multi_andamento'].config(text=extrair_ultima_versao_changelog()))
-        self.view.controles['menu_ajuda'].add_command(label="Sobre", command=lambda: visitar_site())
+        self.menu_ajuda.add_command(label="Notas da versão",
+              command=lambda: self.view.controles['lbl_multi_andamento'].configure  (text=extrair_ultima_versao_changelog()))
+        self.menu_ajuda.add_command(label="Sobre", command=lambda: visitar_site())
 
         # --- Controle da Janela Principal ---
-        self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
+        #self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
         criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
@@ -318,23 +326,21 @@ class Funcoes:
         self.atualizar_configuracao()
 
         # --- Controles da Janela Configurações ---
-        self.view.controles['janela_configuracao'].protocol("WM_DELETE_WINDOW",
-                                                         lambda: self.fechar_janelas('janela_configuracao'))
+        self.view.controles['btn_fechar'].configure(command=lambda: self.fechar_janelas('janela_configuracao'))
         #self.view.controles['opt_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
         self.view.controles['opt_selecao'].configure(command=lambda _: self.atualizar_configuracao())
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
         self.view.controles['btn_gravar'].configure(command=lambda: self.gravar_tarefa())
 
         # --- Controle dos Menus ---
-        self.view.controles['barra_menu'].add_command(label="Editar Tarefa",
-                                                      command=lambda: self.habilitar_edicao())
-        self.view.controles['barra_menu'].add_command(label="Nova Tarefa",
-                                                       command=lambda: self.abrir_janela_nova_tarefa())
-        self.view.controles['barra_menu'].add_command(label="Alterar Pastas",
-                                                      command=lambda: self.abrir_janela_alterar_pastas())
-        self.view.controles['barra_menu'].add_command(label="Excluir Tarefa",
-                                                      command=lambda: self.abrir_janela_excluir_tarefa())
-
+        self.view.controles['menu_btn'].adicionar_item("Editar Tarefa",
+                                                      lambda: self.habilitar_edicao())
+        self.view.controles['menu_btn'].adicionar_item("Nova Tarefa",
+                                                       lambda: self.abrir_janela_nova_tarefa())
+        self.view.controles['menu_btn'].adicionar_item("Alterar Pastas",
+                                                      lambda: self.abrir_janela_alterar_pastas())
+        self.view.controles['menu_btn'].adicionar_item("Excluir Tarefa",
+                                                      lambda: self.abrir_janela_excluir_tarefa())
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
         # --- Controles da janela Nova Tarefa ---
@@ -375,6 +381,7 @@ class Funcoes:
     # --- Execução das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):
         global editando_novos_dados, configuracao_aberta, carregar_dados
+        self.view.controles['janela_principal'].attributes("-topmost", False)
         configuracao_aberta = True
         # 1. Cria a parte visual
         visual = JanelaConfiguracao(self.view.controles['janela_principal'])
@@ -389,15 +396,14 @@ class Funcoes:
         if nome_tarefa == "inicial":
             logica.desabiliatar_menus_configuracao()
         else:
-            logica.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="normal")
-            logica.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
-            logica.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
+            logica.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
+            logica.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "normal")
+            logica.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
 
         logica.view.controles['btn_gravar'].configure(state="disabled")
         qtd_origem = len(self.view.controles['opt_selecao'].cget('values'))
         qtd_destino = len(logica.view.controles['opt_selecao'].cget('values'))
         if qtd_origem < qtd_destino:
-            logica.view.controles['cmb_selecao'].config(state="readonly")
             logica.carregar_cmb_selecao()
             editando_novos_dados = False
             logica.atualizar_configuracao()
@@ -431,10 +437,10 @@ class Funcoes:
         logica.view.controles['janela_nova_tarefa'].wait_window()
         nova_tarefa_aberta = False
         if atualizado_pastas:
-            self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="disabled")
-            self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="disabled")
-            self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
-            self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="disabled")
+            self.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "disabled")
+            self.view.controles['menu_btn'].alterar_estado_item("Nova Tarefa", "disabled")
+            self.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "disabled")
+            self.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "disabled")
 
         if editando_novos_dados:
             self.view.controles['btn_gravar'].configure(state="normal")
@@ -714,26 +720,35 @@ class Funcoes:
             return self.icon_tray
 
     def centralizar_janela(self, janela, parent):
-        """Centraliza a janela 'child' no centro da janela 'parent'."""
-        parent.update_idletasks()
-        self.view.controles[janela].update_idletasks()
+        janela_child = self.view.controles[janela]
 
-        # Dimensões e posição da janela principal
+        # 1. Esconde a janela temporariamente via transparência
+        janela_child.attributes("-alpha", 0.0)
+
+        # 2. Força o CustomTkinter a desenhar e dimensionar a interface
+        parent.update_idletasks()
+        janela_child.update_idletasks()
+        janela_child.update()
+
+        # 3. Pega os tamanhos reais já desenhados
         p_width = parent.winfo_width()
         p_height = parent.winfo_height()
         p_x = parent.winfo_rootx()
         p_y = parent.winfo_rooty()
 
-        # Dimensões da janela filha
-        c_width = self.view.controles[janela].winfo_reqwidth()
-        c_height = self.view.controles[janela].winfo_reqheight()
+        c_width = janela_child.winfo_width()
+        c_height = janela_child.winfo_height()
 
-        # Cálculo das coordenadas X e Y
+        # 4. Calcula as coordenadas centrais
         x = p_x + (p_width // 2) - (c_width // 2)
         y = p_y + (p_height // 2) - (c_height // 2)
 
-        # Aplica a geometria (Largura x Altura + X + Y)
-        self.view.controles[janela].geometry(f"{c_width}x{c_height}+{x}+{y}")
+        # 5. Aplica a geometria centralizada e restaura a visibilidade
+        janela_child.geometry(f"{c_width}x{c_height}+{x}+{y}")
+        janela_child.attributes("-alpha", 1.0)
+
+    def centralizar_janela_old(self, janela):
+        self.view.controles[janela].geometry(f"+{pos_x}+{pos_y}")
 
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):
@@ -749,9 +764,9 @@ class Funcoes:
 
     # --- Funções da Janela Configurações ---
     def desabiliatar_menus_configuracao(self):
-        self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="disabled")
-        self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="disabled")
-        self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="disabled")
+        self.view.controles['menu_btn'].entryconfig("Editar Tarefa", state="disabled")
+        self.view.controles['menu_btn'].entryconfig("Alterar Pastas", state="disabled")
+        self.view.controles['menu_btn'].entryconfig("Excluir Tarefa", state="disabled")
 
     def habilitar_edicao(self):
         global editando_dados
@@ -916,12 +931,12 @@ class Funcoes:
                 messagebox.showinfo("Aviso", "Minimo de 3 letras!")
 
             # Habilitar menus
-            self.view.controles['barra_menu'].entryconfig("Editar Tarefa", state="normal")
-            self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
-            self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
+            self.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
+            self.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "normal")
+            self.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
 
         self.view.controles['btn_gravar'].configure(state="disabled")
-        self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")
+        self.view.controles['menu_btn'].alterar_estado_item("Nova Tarefa", "normal")
 
     # --- Funções da janela Nova tarefa ---
     def adicionar_nova_tarefa(self):
@@ -1046,3 +1061,13 @@ class Funcoes:
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
+
+    # --- Menu e título ---
+    def _iniciar_arraste(self, event):
+        self._x = event.x
+        self._y = event.y
+
+    def _arrastar_janela(self, event, janela):
+        x = self.view.controles[janela].winfo_pointerx() - self._x
+        y = self.view.controles[janela].winfo_pointery() - self._y
+        self.view.controles[janela].geometry(f"+{x}+{y}")

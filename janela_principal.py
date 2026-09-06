@@ -3,7 +3,9 @@ import platform
 
 import customtkinter as ctk
 
+import barra_menu
 import estilo
+from menu_hamburguer import MenuHamburguer
 
 sistema = platform.system()
 
@@ -12,7 +14,7 @@ class JanelaPrincipal:
     def __init__(self, janela_principal):
         ## Construção da janela
         self.janela_principal = janela_principal
-        print(sistema)
+        self.janela_principal.overrideredirect(True)
         if sistema == "Linux" or sistema == "Linux2":
             self.janela_principal.withdraw()
         self.janela_principal.title(f"{estilo.NOME_PROGRAMA} {estilo.VERSION}")
@@ -22,7 +24,7 @@ class JanelaPrincipal:
         self.controles = {}
 
         self._criar_layout()
-        self._criar_barra_menu()
+        barra_menu.criar_barra_menu(self, f"{estilo.NOME_PROGRAMA} {estilo.VERSION}", 'janela_principal', False)
 
         # --- CORREÇÃO PARA FORÇAR A EXIBIÇÃO NO WINDOWS ---
         self.janela_principal.update_idletasks()
@@ -35,11 +37,11 @@ class JanelaPrincipal:
 
         ## Painel da janela
         self.frame_controls = ctk.CTkFrame(self.janela_principal)
-        self.frame_controls.grid(row=0, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.frame_controls.grid(row=1, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
         self.controles['frame_controls'] = self.frame_controls
 
         self.frame_andamento = ctk.CTkFrame(self.janela_principal)
-        self.frame_andamento.grid(row=0, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.frame_andamento.grid(row=1, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
 
         ## Controles do painel esquerdo
         self.lbl_selecao = ctk.CTkLabel(self.frame_controls, text="Selecionar Tarefa:", font=estilo.FONTE_VAZIA)
@@ -166,24 +168,3 @@ class JanelaPrincipal:
         # Registra as referências
         self.controles['progress_bar'] = self.progress_bar
         self.controles['lbl_porcentagem'] = self.texto_progresso_id  # Guarda o ID do texto
-        """
-        self.progress_canvas = tk.Canvas(self.frame_andamento, height=25, bg="white", highlightthickness=1,
-                                    highlightbackground="black")
-        self.progress_canvas.grid(row=linha_painel_direito, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="e")
-        self.controles['progress_canvas'] = self.progress_canvas
-        """
-        ## Carregar Menus
-        #criar_barra_menu(self.janela_principal, self.lbl_multi_andamento)
-    def _criar_barra_menu(self):
-        self.barra_menu = tk.Menu(self.janela_principal)
-        self.janela_principal.config(menu=self.barra_menu)
-
-        # Menu Arquivo
-        self.menu_arquivo = tk.Menu(self.barra_menu, tearoff=0)
-        self.barra_menu.add_cascade(label="Arquivo", menu=self.menu_arquivo)
-        self.controles['menu_arquivo'] = self.menu_arquivo
-
-        # Menu Ajuda
-        self.menu_ajuda = tk.Menu(self.barra_menu, tearoff=0)
-        self.barra_menu.add_cascade(label="Ajuda", menu=self.menu_ajuda)
-        self.controles['menu_ajuda'] = self.menu_ajuda
