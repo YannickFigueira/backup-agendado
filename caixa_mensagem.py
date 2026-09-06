@@ -24,6 +24,18 @@ def erro(titulo, mensagem):
         icon="cancel"
     )
 
+def ok_cancel(titulo, mensagem):
+    # Cria a caixa de diálogo estilizada
+    msg = CTkMessagebox(
+        title=titulo,
+        message=mensagem,
+        icon="cancel",
+        option_1="OK",
+        option_2="Cancelar"
+    )
+
+    return msg.get()
+
 def sim_nao(titulo, mensagem):
     # Cria a caixa de diálogo estilizada
     msg = CTkMessagebox(
