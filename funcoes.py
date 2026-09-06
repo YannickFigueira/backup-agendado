@@ -8,14 +8,16 @@ import platform
 import re
 import sys
 import threading
+import time
 import tkinter as tk
 import customtkinter as ctk
 from time import sleep
 
-from tkinter import filedialog, ttk, messagebox
+from tkinter import filedialog, ttk
 from datetime import datetime
 from screeninfo import get_monitors
 
+import caixa_mensagem
 import verificarversao, dados_tinydb, copiar_arquivos, estilo
 from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log
 from janela_alterar_pastas import JanelaAlterarPastas
@@ -133,16 +135,6 @@ def extrair_ultima_versao_changelog():
     except FileNotFoundError:
         return "Arquivo changelog.md não encontrado."
 
-def visitar_site():
-    """Gera mensagem para visitar a página"""
-    pagina = f"https://github.com/YannickFigueira"
-    resposta = messagebox.askyesno("Sobre", f"{estilo.NOME_PROGRAMA} {estilo.VERSION}\n"
-                                            f"Desenvolvedor YannickFigueira\n"
-                                            f"chronostimeinchain@gmail.com\n"
-                                            f"Deseja visitar a página")
-    if resposta:
-        verificarversao.webbrowser.open(pagina)
-
 def verificar_tarefas_existentes(valores_atuais):
     """
     :param valores_atuais:
@@ -240,6 +232,7 @@ class Funcoes:
     def __init__(self, view):
         self.icon_tray = None
         self.view = view
+        self._ultimo_movimento = 0.0
 
         # Teste dos dados
         # Exemplo de como você leria isso no seu script de automação:
@@ -281,7 +274,7 @@ class Funcoes:
         # Permite arrastar a janela clicando no seu frame_titulo customizado
         self.view.controles['frame_titulo'].bind("<Button-1>", self._iniciar_arraste)
         self.view.controles['frame_titulo'].bind("<B1-Motion>", lambda e: self._arrastar_janela(e, "janela_principal"))
-        self.view.controles['btn_minimizar'].configure(command=lambda: self.view.controles['janela_principal'].iconify())
+        #self.view.controles['btn_minimizar'].configure(command=lambda: self.view.controles['janela_principal'].withdraw())
         self.view.controles['btn_fechar'].configure(command=lambda: self.esconder_janela())
 
         # --- Controle do Menu ---
@@ -298,10 +291,10 @@ class Funcoes:
         # -- Menu Ajuda --
         self.menu_ajuda = self.view.controles['menu_btn'].adicionar_submenu("Ajuda")
         self.menu_ajuda.add_command(label="Verificar atualização",
-                                      command=lambda: verificarversao.consultar_lancamento(estilo.REPO, estilo.VERSION))
+                                      command=lambda: verificarversao.consultar_lancamento(estilo.REPO, estilo.VERSION, self.view.controles['janela_principal']))
         self.menu_ajuda.add_command(label="Notas da versão",
               command=lambda: self.view.controles['lbl_multi_andamento'].configure  (text=extrair_ultima_versao_changelog()))
-        self.menu_ajuda.add_command(label="Sobre", command=lambda: visitar_site())
+        self.menu_ajuda.add_command(label="Sobre", command=lambda: self.visitar_site())
 
         # --- Controle da Janela Principal ---
         #self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
@@ -316,7 +309,7 @@ class Funcoes:
         self.view.controles['opt_selecao'].configure(command=lambda escolha: self.atualizar_informacoes(escolha))
 
         if nome_tarefa == "inicial":
-            messagebox.showinfo("Aviso", "Insira a primeira tarefa")
+            caixa_mensagem.info("Aviso", "Insira a primeira tarefa", self.view.controles['janela_principal'])
             self.abrir_janela_configuracoes(nome_tarefa)
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
@@ -412,7 +405,7 @@ class Funcoes:
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
         nome_tarefa = self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
-            messagebox.showinfo("Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
+            caixa_mensagem.info("Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!", self.view.controles['janela_configuracao'])
             self.fechar_programa()
         else:
             configuracao_aberta = False
@@ -515,7 +508,7 @@ class Funcoes:
 
             logica.view.controles['janela_logs_backup'].wait_window()
         else:
-            messagebox.showinfo("Aviso", "Nenhum log foi gerado ainda")
+            caixa_mensagem.info("Aviso", "Nenhum log foi gerado ainda", self.view.controles['janela_logs_backup'])
 
     # --- Funções Gerais ---
     def verificar_tarefa_executando(self):
@@ -592,17 +585,17 @@ class Funcoes:
                     if os.path.exists(verificar_destino):
                         return True
                     else:
-                        messagebox.showinfo("Aviso", "Pasta de destino não existe!")
+                        caixa_mensagem.info("Aviso", "Pasta de destino não existe!", self.view.controles['janela_configuracao'])
                         return False
                 else:
-                    messagebox.showinfo("Aviso", "Pasta de origem não existe!")
+                    caixa_mensagem.info("Aviso", "Pasta de origem não existe!", self.view.controles['janela_configuracao'])
                     return False
             else:
-                messagebox.showinfo("Aviso", "Selecione uma pasta de destino")
+                caixa_mensagem.info("Aviso", "Selecione uma pasta de destino", self.view.controles['janela_configuracao'])
                 self.view.controles['txt_destino'].focus_set()
                 return False
         else:
-            messagebox.showinfo("Aviso", "Selecione uma pasta de origem")
+            caixa_mensagem.info("Aviso", "Selecione uma pasta de origem", self.view.controles['janela_configuracao'])
             self.view.controles['txt_origem'].focus_set()
             return False
 
@@ -617,10 +610,9 @@ class Funcoes:
         self.view.controles['janela_principal'].deiconify()
 
     def fechar_programa(self, icon=None):
-        resposta = messagebox.askokcancel("Alerta",
-    "Fechando o programa o backup não será mais executado até que seja iniciado novamente",
-            icon="warning")
-        if resposta:
+        resposta = caixa_mensagem.ok_cancel("Alerta",
+    "Fechando o programa o backup não será mais executado até que seja iniciado novamente", master=self.view.controles['janela_principal'])
+        if resposta == "OK":
             if sistema == "Linux":
                 # 1. Oculta e destrói os objetos Qt no Linux
                 if hasattr(self, 'qt_tray') and self.qt_tray is not None:
@@ -747,9 +739,6 @@ class Funcoes:
         janela_child.geometry(f"{c_width}x{c_height}+{x}+{y}")
         janela_child.attributes("-alpha", 1.0)
 
-    def centralizar_janela_old(self, janela):
-        self.view.controles[janela].geometry(f"+{pos_x}+{pos_y}")
-
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):
         pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
@@ -772,7 +761,7 @@ class Funcoes:
         global editando_dados
         editando_dados = True
         self.view.controles['btn_gravar'].configure(state="normal")
-        messagebox.showinfo("Aviso", "Edição habilitada")
+        caixa_mensagem.info("Aviso", "Edição habilitada", self.view.controles['janela_configuracao'])
 
     def atualizar_configuracao(self):
         global editando_excluir_dados
@@ -860,7 +849,7 @@ class Funcoes:
         global editando_dados, editando_novos_dados, atualizado_pastas, pasta_origem, pasta_destino, carregar_dados
         nome_tarefa = self.view.controles['txt_tarefa'].get().strip()
         if nome_tarefa == "inicial":
-            messagebox.showinfo("Aviso", "Nome reservado e não pode ser usado!")
+            caixa_mensagem.info("Aviso", "Nome reservado e não pode ser usado!", self.view.controles['janela_configuracao'])
             pasta_origem = []
             pasta_destino = []
             self.view.controles['cmb_selecao'].current(0)
@@ -900,7 +889,7 @@ class Funcoes:
                         atualizado_pastas = False
                         self.carregar_cmb_selecao()
                         self.atualizar_configuracao()
-                        messagebox.showinfo("Aviso", "Novos dados gravados com sucesso!")
+                        caixa_mensagem.info("Aviso", "Novos dados gravados com sucesso!", self.view.controles['janela_configuracao'])
                         qtd_origem = len(self.view.controles['cmb_selecao']['values'])
                         if qtd_origem > 1:
                             if self.view.controles['cmb_selecao'].get() == "inicial":
@@ -922,13 +911,13 @@ class Funcoes:
                         editando_dados = False
                         self.carregar_cmb_selecao()
                         self.atualizar_configuracao()
-                        messagebox.showinfo("Aviso", "Dados alterados com sucesso!")
+                        caixa_mensagem.info("Aviso", "Dados alterados com sucesso!", self.view.controles['janela_configuracao'])
                     else:
-                        messagebox.showinfo("Aviso", "Nenhum dados foi alterado!\nHabilite a edição ou insira novos dados.")
+                        caixa_mensagem.info("Aviso", "Nenhum dados foi alterado!\nHabilite a edição ou insira novos dados.", self.view.controles['janela_configuracao'])
                 else:
-                    messagebox.showinfo("Aviso", "Nome da tarefa não pode estar vazio!")
+                    caixa_mensagem.info("Aviso", "Nome da tarefa não pode estar vazio!", self.view.controles['janela_configuracao'])
             else:
-                messagebox.showinfo("Aviso", "Minimo de 3 letras!")
+                caixa_mensagem.info("Aviso", "Minimo de 3 letras!", self.view.controles['janela_configuracao'])
 
             # Habilitar menus
             self.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
@@ -957,10 +946,10 @@ class Funcoes:
             atualizado_pastas = True
             self.view.controles['txt_destino'].delete(0, "end")
             editando_novos_dados = True
-            messagebox.showinfo("Aviso", "Nova tarefa pronta para ser gravada")
+            caixa_mensagem.info("Aviso", "Nova tarefa pronta para ser gravada", self.view.controles['janela_configuracao'])
             self.view.controles['janela_nova_tarefa'].destroy()
         else:
-            messagebox.showinfo("Aviso", "Adicione ao menos uma pasta")
+            caixa_mensagem.info("Aviso", "Adicione ao menos uma pasta", self.view.controles['janela_configuracao'])
 
     # --- Funcões da Janela Alterar Pastas ---
     def carregar_pastas(self):
@@ -987,7 +976,7 @@ class Funcoes:
             dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
 
-            messagebox.showinfo("Aviso", "Pastas alteradas com sucesso!")
+            caixa_mensagem.info("Aviso", "Pastas alteradas com sucesso!", self.view.controles['janela_configuracao'])
 
     def adicionar_pasta(self):
         global editando_adicionar_pasta
@@ -1010,8 +999,8 @@ class Funcoes:
         global origem_pasta, destino_pasta, carregar_dados
         qtd_origem = len(self.view.controles['cmb_selecao']['values'])
         if qtd_origem > 1:
-            resposta = messagebox.askyesno("Atenção", "Pasta será excluída!")
-            if resposta:
+            resposta = caixa_mensagem.sim_nao("Atenção", "Pasta será excluída!", self.view.controles['janela_configuracao'])
+            if resposta == "Sim":
                 valores_atuais = list(self.view.controles['cmb_selecao']['values'])
                 valores_novos_pasta_origem = []
                 valores_novos_pasta_destino = []
@@ -1040,16 +1029,16 @@ class Funcoes:
                 dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
                 carregar_dados = dados_tinydb.carregar_dados_tarefa()
 
-                messagebox.showinfo("Aviso", "Pastas excluida com sucesso!")
+                caixa_mensagem.info("Aviso", "Pastas excluida com sucesso!", self.view.controles['janela_configuracao'])
         else:
-            messagebox.showinfo("Aviso", "Existe somente uma pasta, para excluir deve apagar a tarefa!")
+            caixa_mensagem.info("Aviso", "Existe somente uma pasta, para excluir deve apagar a tarefa!", self.view.controles['janela_configuracao'])
 
 
     # --- Funções da Janela Excluir Tarefa ---
     def excluir_tarefa(self):
         global editando_excluir_dados, carregar_dados
-        resposta = messagebox.askyesno("Atenção", "Tarefa será excluída!")
-        if resposta:
+        resposta = caixa_mensagem.sim_nao("Atenção", "Tarefa será excluída!", self.view.controles['janela_configuracao'])
+        if resposta == "Sim":
             nome_tarefa = self.view.controles['cmb_selecao'].get()
             qtd_tarefa = len(self.view.controles['cmb_selecao']['values'])
             dados_tinydb.apagar_dados_tarefa(nome_tarefa)
@@ -1062,12 +1051,30 @@ class Funcoes:
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
 
+    def visitar_site(self):
+        """Gera mensagem para visitar a página"""
+        pagina = f"https://github.com/YannickFigueira"
+        resposta = caixa_mensagem.sim_nao("Sobre", f"{estilo.NOME_PROGRAMA} {estilo.VERSION}\n"
+                                                   f"Desenvolvedor YannickFigueira\n"
+                                                   f"chronostimeinchain@gmail.com\n"
+                                                   f"Deseja visitar a página", self.view.controles['janela_principal'])
+        if resposta == "Sim":
+            verificarversao.webbrowser.open(pagina)
+
     # --- Menu e título ---
     def _iniciar_arraste(self, event):
         self._x = event.x
         self._y = event.y
 
     def _arrastar_janela(self, event, janela):
+        tempo_atual = time.time()
+
+        # Processa a movimentação no máximo a cada ~16ms (~60 FPS)
+        if tempo_atual - self._ultimo_movimento < 0.016:
+            return
+
+        self._ultimo_movimento = tempo_atual
+
         x = self.view.controles[janela].winfo_pointerx() - self._x
         y = self.view.controles[janela].winfo_pointery() - self._y
         self.view.controles[janela].geometry(f"+{x}+{y}")

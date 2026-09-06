@@ -2,8 +2,11 @@ import webbrowser
 from tkinter import messagebox
 import requests
 
+import caixa_mensagem
+
+
 # Substitua pelo seu repositório
-def consultar_lancamento(repo, version):
+def consultar_lancamento(repo, version, janela):
     owner = "YannickFigueira"
     #repo = "CopiarArquivos"
 
@@ -16,17 +19,18 @@ def consultar_lancamento(repo, version):
         if not release["tag_name"] == version:
             #messagebox.showinfo("Lancamento", f"Nova versão\n{release['name']}")
 
-            resposta = messagebox.askyesno(
+            resposta = caixa_mensagem.sim_nao(
                 "Lançamento",
-                f"Nova versão: {release['name']}\n\nDeseja abrir o link de download?"
+                f"Nova versão: {release['name']}\n\nDeseja abrir o link de download?",
+                janela
             )
 
-            if resposta:
+            if resposta == "Sim":
                 webbrowser.open(pagina)
             #print("Última versão:", release["tag_name"])
             #print("Nome:", release["name"])
             #print("Publicado em:", release["published_at"])
         else:
-            messagebox.showinfo("Lancamento", "Já está usando a versão mais recente")
+            caixa_mensagem.info("Lancamento", "Já está usando a versão mais recente", janela)
     else:
-        messagebox.showwarning("Erro ao consultar:", "Repositório não encontrado")
+        caixa_mensagem.info("Erro ao consultar:", "Repositório não encontrado", janela)

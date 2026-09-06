@@ -4,8 +4,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import platform
-from tkinter import messagebox
 
+import caixa_mensagem
 import dados_tinydb
 from arquivo_log import gerar_arquivo_log, registrar_log
 from estilo import log_files
@@ -29,8 +29,8 @@ def pausar_copia():
     pausar = True
 
 def cancelar_copia():
-    resposta = messagebox.askyesno("Cancelar", "Quer realmente cancelar?")
-    if resposta:
+    resposta = caixa_mensagem.sim_nao("Cancelar", "Quer realmente cancelar?")
+    if resposta == "Sim":
         global cancelar
         cancelar = True
 
@@ -145,7 +145,7 @@ def copiando_arquivos(origem, destino, view):
     with ThreadPoolExecutor(max_workers=2) as executor:
         for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
             if pausar:
-                messagebox.showinfo("Pausa", "Tarefa pausada")
+                caixa_mensagem.info("Pausa", "Tarefa pausada")
                 pausar = False
 
             if cancelar:
