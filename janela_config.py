@@ -1,11 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
+import customtkinter as ctk
 
 import estilo
+from seletor_tempo import TimeSelector
+
 
 class JanelaConfiguracao:
     def __init__(self, janela):
-        self.janela_configuracao = tk.Toplevel(janela)
+        self.janela_configuracao = ctk.CTkToplevel(janela)
         self.janela_configuracao.title("Configurações")
         #self.janela_config.geometry("600x400")
         # Garante que esta janela apareça SEMPRE por cima da principal
@@ -44,55 +47,89 @@ class JanelaConfiguracao:
         self.janela_configuracao.protocol("WM_DELETE_WINDOW", ao_fechar)
 
         ## Painel da janela
-        self.frame_campos = ttk.Frame(self.janela_configuracao)
+        self.frame_campos = ctk.CTkFrame(self.janela_configuracao)
         self.frame_campos.grid(row=0, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
 
-        self.frame_checkbox = ttk.Frame(self.janela_configuracao)
+        self.frame_checkbox = ctk.CTkFrame(self.janela_configuracao)
         self.frame_checkbox.grid(row=1, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
 
         ## Controles do painel campos
         linha_campo = 0
 
-        self.lbl_selecao = ttk.Label(self.frame_campos, text="Selecionar:", font=estilo.FONTE_ARIAL)
+        self.lbl_selecao = ctk.CTkLabel(self.frame_campos, text="Selecionar:", font=estilo.FONTE_ARIAL)
         self.lbl_selecao.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
-        self.cmb_selecao = ttk.Combobox(self.frame_campos, font=estilo.FONTE_VAZIA, state="readonly")
+        self.cmb_selecao = ctk.CTkOptionMenu(self.frame_campos, font=estilo.FONTE_VAZIA)
         self.cmb_selecao.grid(row=linha_campo, column=1, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
-        self.controles['cmb_selecao'] = self.cmb_selecao
+        self.controles['opt_selecao'] = self.cmb_selecao
         linha_campo += 1
 
-        self.lbl_tarefa = ttk.Label(self.frame_campos, text="Tarefa:", font=estilo.FONTE_ARIAL)
+        self.lbl_tarefa = ctk.CTkLabel(self.frame_campos, text="Tarefa:", font=estilo.FONTE_ARIAL)
         self.lbl_tarefa.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
-        self.txt_tarefa = ttk.Entry(self.frame_campos, width=40, font=estilo.FONTE_ARIAL)
+        self.txt_tarefa = ctk.CTkEntry(self.frame_campos, width=350, font=estilo.FONTE_ARIAL)
         self.txt_tarefa.grid(row=linha_campo, column=1, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="we")
         self.controles['txt_tarefa'] = self.txt_tarefa
         linha_campo += 1
 
-        self.lbl_horario = ttk.Label(self.frame_campos, text="Horario:", font=estilo.FONTE_ARIAL)
+        self.lbl_horario = ctk.CTkLabel(self.frame_campos, text="Horario:", font=estilo.FONTE_ARIAL)
         self.lbl_horario.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
 
         # Container para agrupar os elementos da hora
-        self.frame_hora = ttk.Frame(self.frame_campos, padding=0)
-        self.frame_hora.grid(row=linha_campo, column=1)
+        self.frame_hora = ctk.CTkFrame(self.frame_campos, fg_color="transparent")
+        self.frame_hora.grid(row=linha_campo, column=1, sticky="w")
 
+        # Seletor de Horas
+        self.spin_hora = TimeSelector(
+            self.frame_hora,
+            values=[f"{h:02d}" for h in range(24)],
+            initial_value="17",
+            width=70,
+            font=estilo.FONTE_VAZIA
+        )
+        self.spin_hora.pack(side="left", padx=2)
+
+        # Separador ":"
+        lbl_pontos = ctk.CTkLabel(self.frame_hora, text=":", font=("Arial", 16, "bold"))
+        lbl_pontos.pack(side="left", padx=2)
+
+        # Seletor de Minutos
+        self.spin_min = TimeSelector(
+            self.frame_hora,
+            values=[f"{m:02d}" for m in range(0, 60, 5)],
+            initial_value="00",
+            width=70,
+            font=estilo.FONTE_VAZIA
+        )
+        self.spin_min.pack(side="left", padx=2)
+
+        self.controles['spin_hora'] = self.spin_hora
+        self.controles['spin_min'] = self.spin_min
+        """
         # Spinbox das Horas (00 a 23)
         # format="%02.0f" garante que mostre '01' em vez de '1'
-        self.spin_hora = ttk.Spinbox(self.frame_hora, from_=0, to=23, format="%02.0f", width=3, wrap=True, font=("Segoe UI", 12))
-        self.spin_hora.set("17")  # Hora padrão
+        #self.spin_hora = ttk.Spinbox(self.frame_hora, from_=0, to=23, format="%02.0f", width=3, wrap=True, font=("Segoe UI", 12))
+        self.spin_hora = ctk.CTkOptionMenu(self.frame_hora, font=estilo.FONTE_VAZIA)
+        horas = [f"{h:02d}" for h in range(24)]
+        self.spin_hora.configure(values=horas)  # Hora padrão
+        self.spin_hora.set(horas[16])
         self.spin_hora.grid(row=0, column=0)
         self.controles['spin_hora'] = self.spin_hora
 
         # Separador dos dois pontos
-        self.lbl_dois_pontos = ttk.Label(self.frame_hora, text=":", font=("Segoe UI", 18, "bold"))
+        self.lbl_dois_pontos = ctk.CTkLabel(self.frame_hora, text=":", font=("Segoe UI", 18, "bold"))
         self.lbl_dois_pontos.grid(row=0, column=1, padx=5)
 
         # Spinbox dos Minutos (00 a 59)
-        self.spin_min = ttk.Spinbox(self.frame_hora, from_=0, to=59, format="%02.0f", width=3, wrap=True, font=("Segoe UI", 12))
+        #self.spin_min = ttk.Spinbox(self.frame_hora, from_=0, to=59, format="%02.0f", width=3, wrap=True, font=("Segoe UI", 12))
+        self.spin_min = ctk.CTkOptionMenu(self.frame_hora, font=estilo.FONTE_VAZIA, dynamic_resizing=False)
+        minutos = [f"{m:02d}" for m in range(60)]
+        self.spin_min.configure(values=minutos)
         self.spin_min.set("00")  # Minuto padrão
         self.spin_min.grid(row=0, column=2)
+        self.spin_min._dropdown_menu.configure(height=10)
         self.controles['spin_min'] = self.spin_min
-
+        """
         # --- Painel Checkbutton ---
         linha_check = 0
         self.var_desabilitar = tk.BooleanVar()
@@ -162,27 +199,18 @@ class JanelaConfiguracao:
         self.btn_gravar = ttk.Button(self.frame_checkbox, width=largura_botao, text="Gravar Tarefa", style="Fonte.TButton")
         self.btn_gravar.grid(row=0, rowspan=5, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
         self.controles['btn_gravar'] = self.btn_gravar
-
-        # Texto de exemplo
-        texto_longo = (
-            "Status do Sistema:\n"
-            "  Backup da pasta 'Trabalho' concluído.\n"
-            "  Erro ao acessar a unidade E:/ (Dispositivo desconectado). extensão de teste!\n"
-            "  Próxima verificação agendada para às 20:00."
-        )
-        self.moldura_pastas = ttk.Frame(self.frame_checkbox, relief="solid", borderwidth=1, padding=10)
+        
+        self.moldura_pastas = ctk.CTkFrame(self.frame_checkbox)
         self.moldura_pastas.grid(row=linha_check, column=0,
                                           columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
 
-        self.lbl_pastas = ttk.Label(
+        self.lbl_pastas = ctk.CTkLabel(
             self.moldura_pastas,
-            text=texto_longo,
             justify="left",
             wraplength=370,
-            font=estilo.FONTE_VAZIA,
-            padding=(10, 4, 10, 4)
+            font=estilo.FONTE_VAZIA
         )
-        self.lbl_pastas.pack(anchor="w")
+        self.lbl_pastas.pack(anchor="w", padx=(10, 4), pady=(10, 4))
         self.controles['lbl_pastas'] = self.lbl_pastas
 
     def _criar_barra_menu(self):

@@ -2,12 +2,14 @@
 
 Este módulo gerencia toda a funcionalidade do programa
 """
+import inspect
 import os
 import platform
 import re
 import sys
 import threading
 import tkinter as tk
+import customtkinter as ctk
 from time import sleep
 
 from tkinter import filedialog, ttk, messagebox
@@ -21,6 +23,7 @@ from janela_config import JanelaConfiguracao
 from janela_logs_backup import JanelaLogsBackup
 from janela_nova_tarefa import JanelaNovaTarefa
 from janela_excluir_tarefa import JanelaExcluirTarefa
+from seletor_tempo import TimeSelector
 
 # --- Inicialização de variáveis ---
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
@@ -42,6 +45,18 @@ alterar_pasta_aberta = False
 excluir_tarefa_aberta = False
 
 # --- Funções de controle geral ---
+sistema = platform.system()
+def log_mensagem(msg):
+    frame = inspect.currentframe().f_back
+
+    if frame is not None:
+        linha = frame.f_lineno
+        arquivo = frame.f_code.co_filename
+        print(f"{msg} (arquivo: {arquivo}, linha: {linha})")
+    else:
+        # Fallback caso não encontre o frame anterior (ex: chamado do escopo global)
+        print(f"{msg} (arquivo: desconhecido, linha: desconhecida)")
+
 def selecionar_pasta():
     """
     :return:
@@ -62,7 +77,7 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
     :param espacoy:
     """
     # 1. Criamos um container invisível para envelopar o separador completo
-    container = ttk.Frame(janela_container)
+    container = ctk.CTkFrame(janela_container)
     container.grid(row=linha, columnspan=6, sticky="ew", padx=espacox, pady=espacoy)
 
     # Configura o container para expandir as linhas laterais igualmente
@@ -75,7 +90,7 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
 
     # 3. O Texto Centralizado (com peso Bold/Negrito)
     # Usamos o fundo padrão (background) do root para não dar corte de cor
-    label_texto = ttk.Label(container, text=texto, font=("", 10, "bold"))
+    label_texto = ctk.CTkLabel(container, text=texto, font=("", 10, "bold"))
     label_texto.grid(row=0, column=1, sticky="ne")
 
     # 4. Linha da Direita
@@ -237,7 +252,8 @@ class Funcoes:
         self.atualizar_informacoes(nome_tarefa)
         if not nome_tarefa == "inicial":
             self.verificar_tarefa_executando()
-            self.esconder_janela()
+            #self.esconder_janela()
+            log_mensagem("Habilitar esconder a tela")
 
         self.criar_bandeja()
 
@@ -285,10 +301,11 @@ class Funcoes:
                                   espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
 
         # --- Controle da janela ---
-        self.view.controles['btn_executar'].config(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].get()))
-        self.view.controles['btn_pausar'].config(command=lambda: copiar_arquivos.pausar_copia())
-        self.view.controles['btn_encerrar'].config(command=lambda: copiar_arquivos.cancelar_copia())
-        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_informacoes(self.view.controles['cmb_selecao'].get()))
+        self.view.controles['btn_executar'].configure(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['opt_selecao'].get()))
+        self.view.controles['btn_pausar'].configure(command=lambda: copiar_arquivos.pausar_copia())
+        self.view.controles['btn_encerrar'].configure(command=lambda: copiar_arquivos.cancelar_copia())
+        #self.view.controles['opt_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_informacoes(self.view.controles['opt_selecao'].get()))
+        self.view.controles['opt_selecao'].configure(command=lambda escolha: self.atualizar_informacoes(escolha))
 
         if nome_tarefa == "inicial":
             messagebox.showinfo("Aviso", "Insira a primeira tarefa")
@@ -303,7 +320,8 @@ class Funcoes:
         # --- Controles da Janela Configurações ---
         self.view.controles['janela_configuracao'].protocol("WM_DELETE_WINDOW",
                                                          lambda: self.fechar_janelas('janela_configuracao'))
-        self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
+        #self.view.controles['opt_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
+        self.view.controles['opt_selecao'].configure(command=lambda _: self.atualizar_configuracao())
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
         self.view.controles['btn_gravar'].config(command=lambda: self.gravar_tarefa())
 
@@ -376,8 +394,8 @@ class Funcoes:
             logica.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
 
         logica.view.controles['btn_gravar'].config(state="disabled")
-        qtd_origem = len(self.view.controles['cmb_selecao']['values'])
-        qtd_destino = len(logica.view.controles['cmb_selecao']['values'])
+        qtd_origem = len(self.view.controles['opt_selecao'].cget('values'))
+        qtd_destino = len(logica.view.controles['opt_selecao'].cget('values'))
         if qtd_origem < qtd_destino:
             logica.view.controles['cmb_selecao'].config(state="readonly")
             logica.carregar_cmb_selecao()
@@ -395,7 +413,7 @@ class Funcoes:
             nome_tarefa = self.carregar_cmb_selecao()
             hora = carregar_dados['tarefas'][nome_tarefa]['hora']
             minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
-            self.view.controles['lbl_hora_execucao'].config(text=f"{hora}:{minuto}")
+            self.view.controles['lbl_hora_execucao'].configure(text=f"{hora}:{minuto}")
 
     def abrir_janela_nova_tarefa(self):
         global pasta_origem, pasta_destino, nova_tarefa_aberta
@@ -525,7 +543,7 @@ class Funcoes:
                 try:
                     lbl_multi_execucao.after(
                         0,
-                        lambda texto=lista_executando: self.view.controles['lbl_multi_execucao'].config(text=texto)
+                        lambda texto=lista_executando: self.view.controles['lbl_multi_execucao'].configure(text=texto)
                     )
                 except (tk.TclError, RuntimeError):
                     break  # Tkinter foi fechado, interrompe a thread
@@ -553,9 +571,9 @@ class Funcoes:
 
     def carregar_cmb_selecao(self):
         lista_nomes = list(carregar_dados['tarefas'].keys())
-        self.view.controles['cmb_selecao'].config(values=list(lista_nomes))
-        self.view.controles['cmb_selecao'].current(0)
-        nome_tarefa = self.view.controles['cmb_selecao'].get()
+        self.view.controles['opt_selecao'].configure(values=list(lista_nomes))
+        self.view.controles['opt_selecao'].set(lista_nomes[0])
+        nome_tarefa = self.view.controles['opt_selecao'].get()
 
         return nome_tarefa
 
@@ -597,8 +615,6 @@ class Funcoes:
     "Fechando o programa o backup não será mais executado até que seja iniciado novamente",
             icon="warning")
         if resposta:
-            sistema = platform.system()
-
             if sistema == "Linux":
                 # 1. Oculta e destrói os objetos Qt no Linux
                 if hasattr(self, 'qt_tray') and self.qt_tray is not None:
@@ -609,6 +625,8 @@ class Funcoes:
                 if hasattr(self, 'qt_app') and self.qt_app is not None:
                     self.qt_app.quit()
                     self.qt_app = None
+
+                os._exit(0)
 
             else:
                 # Lógica exclusiva para o Windows (pystray + Tkinter)
@@ -652,7 +670,6 @@ class Funcoes:
                 janela.after(150, self._processar_eventos_qt)
 
     def criar_bandeja(self):
-        sistema = platform.system()
         caminho_imagem = obter_caminho_recurso("imagens/backup.png")
 
         if sistema == "Linux":
@@ -728,7 +745,7 @@ class Funcoes:
     def atualizar_horario(self, nome_tarefa):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
-        self.view.controles['lbl_hora_execucao'].config(text=f"{hora_atualizada}:{minuto_atualizado}")
+        self.view.controles['lbl_hora_execucao'].configure(text=f"{hora_atualizada}:{minuto_atualizado}")
 
     # --- Funções da Janela Configurações ---
     def desabiliatar_menus_configuracao(self):
@@ -749,7 +766,7 @@ class Funcoes:
                 nome_tarefa = self.carregar_cmb_selecao()
                 editando_excluir_dados = False
             else:
-                nome_tarefa = self.view.controles['cmb_selecao'].get()
+                nome_tarefa = self.view.controles['opt_selecao'].get()
             self.view.controles['txt_tarefa'].delete(0, "end")
             self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
             hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
@@ -783,7 +800,7 @@ class Funcoes:
             for i in range(len(pastas_origem)):
                 origem += f"   {pastas_origem[i]}\n"
                 destino += f"   {pastas_destino[i]}\n"
-            self.view.controles['lbl_pastas'].config(text=f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
+            self.view.controles['lbl_pastas'].configure(text=f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
         else:
             # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
             valores_atuais = list(self.view.controles['cmb_selecao']['values'])
@@ -853,8 +870,7 @@ class Funcoes:
                         editando_novos_dados = False
 
                     # Captura os dados
-                    self.view.controles['cmb_selecao'].config(state="readonly")
-                    nome_tarefa = self.view.controles['cmb_selecao'].get()
+                    nome_tarefa = self.view.controles['opt_selecao'].get()
                     tarefa = self.view.controles['txt_tarefa'].get().strip()
                     if len(hora) == 1:
                         hora = f"0{hora}"

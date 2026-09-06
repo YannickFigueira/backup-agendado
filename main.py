@@ -2,6 +2,7 @@ import sys
 import argparse
 import os
 import tkinter as tk
+import customtkinter as ctk
 
 import estilo, backup_automatizado
 from arquivo_log import gerar_arquivo_log
@@ -28,7 +29,7 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
     # 1. Passe o className diretamente no construtor do Tk (resolve o aviso do className)
-    root = tk.Tk(className=estilo.NOME_PROGRAMA)
+    root = ctk.CTk(className=estilo.NOME_PROGRAMA)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     caminho_icone = os.path.join(base_dir, "imagens", "backup.png")
