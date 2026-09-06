@@ -323,7 +323,7 @@ class Funcoes:
         #self.view.controles['opt_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
         self.view.controles['opt_selecao'].configure(command=lambda _: self.atualizar_configuracao())
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
-        self.view.controles['btn_gravar'].config(command=lambda: self.gravar_tarefa())
+        self.view.controles['btn_gravar'].configure(command=lambda: self.gravar_tarefa())
 
         # --- Controle dos Menus ---
         self.view.controles['barra_menu'].add_command(label="Editar Tarefa",
@@ -393,7 +393,7 @@ class Funcoes:
             logica.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
             logica.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
 
-        logica.view.controles['btn_gravar'].config(state="disabled")
+        logica.view.controles['btn_gravar'].configure(state="disabled")
         qtd_origem = len(self.view.controles['opt_selecao'].cget('values'))
         qtd_destino = len(logica.view.controles['opt_selecao'].cget('values'))
         if qtd_origem < qtd_destino:
@@ -437,7 +437,7 @@ class Funcoes:
             self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="disabled")
 
         if editando_novos_dados:
-            self.view.controles['btn_gravar'].config(state="normal")
+            self.view.controles['btn_gravar'].configure(state="normal")
         # 3. Atualiza os valores do Combobox
         self.atualizar_configuracao()
 
@@ -756,7 +756,7 @@ class Funcoes:
     def habilitar_edicao(self):
         global editando_dados
         editando_dados = True
-        self.view.controles['btn_gravar'].config(state="normal")
+        self.view.controles['btn_gravar'].configure(state="normal")
         messagebox.showinfo("Aviso", "Edição habilitada")
 
     def atualizar_configuracao(self):
@@ -854,14 +854,6 @@ class Funcoes:
             hora = self.view.controles['spin_hora'].get()
             minuto = self.view.controles['spin_min'].get()
 
-            if len(hora) > 2:
-                messagebox.showwarning("Aviso", "Formato de hora inválido!\nRedigite ou use as setas")
-                return
-
-            if len(minuto) > 2:
-                messagebox.showwarning("Aviso", "Formato de minuto inválido!\nRedigite ou use as setas")
-                return
-
             if len(nome_tarefa) > 2:
                 if nome_tarefa != "":
                     if not atualizado_pastas:
@@ -872,10 +864,6 @@ class Funcoes:
                     # Captura os dados
                     nome_tarefa = self.view.controles['opt_selecao'].get()
                     tarefa = self.view.controles['txt_tarefa'].get().strip()
-                    if len(hora) == 1:
-                        hora = f"0{hora}"
-                    if len(minuto) == 1:
-                        minuto = f"0{minuto}"
                     semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
                     diario = self.view.controles['var_diariamente'].get()
                     index = 0
@@ -932,7 +920,7 @@ class Funcoes:
             self.view.controles['barra_menu'].entryconfig("Alterar Pastas", state="normal")
             self.view.controles['barra_menu'].entryconfig("Excluir Tarefa", state="normal")
 
-        self.view.controles['btn_gravar'].config(state="disabled")
+        self.view.controles['btn_gravar'].configure(state="disabled")
         self.view.controles['barra_menu'].entryconfig("Nova Tarefa", state="normal")
 
     # --- Funções da janela Nova tarefa ---
