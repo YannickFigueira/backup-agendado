@@ -1,6 +1,5 @@
 import customtkinter as ctk
 
-
 class MenuHamburguer(ctk.CTkButton):
     def __init__(self, master, width=40, height=32, **kwargs):
         super().__init__(
@@ -14,7 +13,6 @@ class MenuHamburguer(ctk.CTkButton):
         self.itens = []
         self.popup = None
         self.active_submenu_popup = None
-        # Dicionário para guardar as referências de estado dos itens
         self.estados = {}
 
     def adicionar_item(self, texto, comando, estado="normal"):
@@ -25,12 +23,10 @@ class MenuHamburguer(ctk.CTkButton):
     def alterar_estado_item(self, texto, estado):
         """Altera o estado de um item para 'normal' ou 'disabled'."""
         self.estados[texto] = estado
-        # Se o pop-up estiver aberto no momento, atualiza a interface imediatamente
         if self.popup and self.popup.winfo_exists():
             for child in self.popup.winfo_children():
-                for btn in child.winfo_children():
-                    if isinstance(btn, ctk.CTkButton) and btn.cget("text") == texto:
-                        btn.configure(state=estado)
+                if isinstance(child, ctk.CTkButton) and child.cget("text") == texto:
+                    child.configure(state=estado)
 
     def adicionar_submenu(self, texto):
         """Cria e retorna uma instância de Submenu vinculada a este item."""
@@ -43,31 +39,38 @@ class MenuHamburguer(ctk.CTkButton):
             self._destruir_popups()
             return
 
-        self.popup = ctk.CTkToplevel(self)
-        self.popup.overrideredirect(True)
-        self.popup.attributes("-topmost", True)
+        # Pega a janela principal raiz para desenhar o menu por cima de tudo
+        root_window = self.winfo_toplevel()
 
-        x = self.winfo_rootx()
-        y = self.winfo_rooty() + self.winfo_height() + 2
+        # Calcula a posição relativa do botão em relação à janela principal
+        bx = self.winfo_rootx() - root_window.winfo_rootx()
+        by = self.winfo_rooty() - root_window.winfo_rooty() + self.winfo_height() + 2
         largura_popup = max(160, self.winfo_width())
 
-        self.popup.geometry(f"{largura_popup}x{len(self.itens) * 35}+{x}+{y}")
-
-        frame_itens = ctk.CTkFrame(self.popup, corner_radius=6)
-        frame_itens.pack(fill="both", expand=True)
+        # Cria um CTkFrame interno no lugar do CTkToplevel
+        self.popup = ctk.CTkFrame(
+            root_window,
+            width=largura_popup,
+            height=len(self.itens) * 35,
+            corner_radius=6,
+            border_width=1,
+            border_color=("gray70", "gray30")
+        )
+        self.popup.place(x=bx, y=by)
+        self.popup.lift()  # Traz para a frente de todos os widgets na mesma janela
 
         for item in self.itens:
             if item["tipo"] == "item":
                 estado_atual = self.estados.get(item["texto"], "normal")
                 btn = ctk.CTkButton(
-                    frame_itens,
+                    self.popup,
                     text=item["texto"],
                     height=30,
                     anchor="w",
                     fg_color="transparent",
                     text_color=("gray10", "gray90"),
                     hover_color=("gray70", "gray30"),
-                    state=estado_atual,  # Aplica o estado registrado
+                    state=estado_atual,
                     command=lambda cmd=item["comando"]: self._executar_acao(cmd)
                 )
                 btn.bind("<Enter>", lambda e: self._fechar_active_submenu())
@@ -75,7 +78,7 @@ class MenuHamburguer(ctk.CTkButton):
 
             elif item["tipo"] == "submenu":
                 btn = ctk.CTkButton(
-                    frame_itens,
+                    self.popup,
                     text=f"{item['texto']}  ▶",
                     height=30,
                     anchor="w",
@@ -88,30 +91,35 @@ class MenuHamburguer(ctk.CTkButton):
                 btn.bind("<Enter>", lambda e, b=btn, s=sub_obj: self._abrir_submenu_lateral(b, s))
                 btn.pack(fill="x", padx=4, pady=2)
 
-        self.winfo_toplevel().bind("<Button-1>", self._check_click_outside, add="+")
+        root_window.bind("<Button-1>", self._check_click_outside, add="+")
 
     def _abrir_submenu_lateral(self, btn_widget, submenu_obj):
         self._fechar_active_submenu()
 
-        # Janela do submenu lateral
-        sub_popup = ctk.CTkToplevel(self.popup)
-        sub_popup.overrideredirect(True)
-        sub_popup.attributes("-topmost", True)
+        root_window = self.winfo_toplevel()
 
-        # Posiciona à direita do item correspondente
-        x = btn_widget.winfo_rootx() + btn_widget.winfo_width() + 4
-        y = btn_widget.winfo_rooty()
+        # Posicionamento relativo ao item pai
+        sx = btn_widget.winfo_rootx() - root_window.winfo_rootx() + btn_widget.winfo_width() + 4
+        sy = btn_widget.winfo_rooty() - root_window.winfo_rooty()
 
         largura_sub = 180
         altura_sub = len(submenu_obj.itens) * 35
-        sub_popup.geometry(f"{largura_sub}x{altura_sub}+{x}+{y}")
 
-        frame_sub = ctk.CTkFrame(sub_popup, corner_radius=6)
-        frame_sub.pack(fill="both", expand=True)
+        # Submenu também é um CTkFrame flutuante interno
+        sub_popup = ctk.CTkFrame(
+            root_window,
+            width=largura_sub,
+            height=altura_sub,
+            corner_radius=6,
+            border_width=1,
+            border_color=("gray70", "gray30")
+        )
+        sub_popup.place(x=sx, y=sy)
+        sub_popup.lift()
 
         for sub_item in submenu_obj.itens:
             b = ctk.CTkButton(
-                frame_sub,
+                sub_popup,
                 text=sub_item["texto"],
                 height=30,
                 anchor="w",
@@ -126,12 +134,14 @@ class MenuHamburguer(ctk.CTkButton):
 
     def _fechar_active_submenu(self):
         if self.active_submenu_popup and self.active_submenu_popup.winfo_exists():
+            self.active_submenu_popup.place_forget()
             self.active_submenu_popup.destroy()
             self.active_submenu_popup = None
 
     def _destruir_popups(self):
         self._fechar_active_submenu()
         if self.popup and self.popup.winfo_exists():
+            self.popup.place_forget()
             self.popup.destroy()
             self.popup = None
 
@@ -142,19 +152,18 @@ class MenuHamburguer(ctk.CTkButton):
 
     def _check_click_outside(self, event):
         if self.popup and self.popup.winfo_exists():
-            # Coordenadas do menu principal
             px, py = self.popup.winfo_rootx(), self.popup.winfo_rooty()
             pw, ph = self.popup.winfo_width(), self.popup.winfo_height()
 
             fora_menu_principal = not (px <= event.x_root <= px + pw and py <= event.y_root <= py + ph)
             fora_submenu = True
 
-            # Coordenadas do submenu lateral
             if self.active_submenu_popup and self.active_submenu_popup.winfo_exists():
                 sx, sy = self.active_submenu_popup.winfo_rootx(), self.active_submenu_popup.winfo_rooty()
                 sw, sh = self.active_submenu_popup.winfo_width(), self.active_submenu_popup.winfo_height()
                 fora_submenu = not (sx <= event.x_root <= sx + sw and sy <= event.y_root <= sy + sh)
 
+            # Verifica se o clique não foi no próprio botão hambúrguer
             if fora_menu_principal and fora_submenu and event.widget != self:
                 self._destruir_popups()
 

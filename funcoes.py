@@ -337,12 +337,11 @@ class Funcoes:
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
         # --- Controles da janela Nova Tarefa ---
-        self.view.controles['janela_nova_tarefa'].protocol("WM_DELETE_WINDOW",
-                                                            lambda: self.fechar_janelas('janela_nova_tarefa'))
-        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_pastas('txt_origem'))
-        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_pastas('txt_destino'))
-        self.view.controles['btn_adicionar'].config(command=lambda: self.adicionar_nova_tarefa())
-        self.view.controles['btn_salvar'].config(command=lambda: self.gravar_pastas())
+        self.view.controles['btn_fechar'].configure(command=lambda: self.fechar_janelas('janela_nova_tarefa'))
+        self.view.controles['btn_selecionar_origem'].configure(command=lambda: self.selecionar_pastas('txt_origem'))
+        self.view.controles['btn_selecionar_destino'].configure(command=lambda: self.selecionar_pastas('txt_destino'))
+        self.view.controles['btn_adicionar'].configure(command=lambda: self.adicionar_nova_tarefa())
+        self.view.controles['btn_salvar'].configure(command=lambda: self.gravar_pastas())
 
     # --- LÓGICA DA JANELA ALTERAR PASTAS ---
     def _vincular_alterar_pastas(self):
@@ -595,7 +594,7 @@ class Funcoes:
                 self.view.controles['txt_destino'].focus_set()
                 return False
         else:
-            caixa_mensagem.info("Aviso", "Selecione uma pasta de origem", self.view.controles['janela_configuracao'])
+            caixa_mensagem.info("Aviso", "Selecione uma pasta de origem", self.view.controles[self.view.janela_controle])
             self.view.controles['txt_origem'].focus_set()
             return False
 

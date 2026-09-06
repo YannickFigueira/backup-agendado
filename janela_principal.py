@@ -13,12 +13,18 @@ class JanelaPrincipal:
         # 1. Oculta a janela para renderizar o layout sem flickering/delay
         self.janela_principal.withdraw()
 
-        # 2. Configurações de janela frameless e transient X11
+        # 2. Configurações de janela frameless e comportamento X11
         self.janela_principal.overrideredirect(True)
 
         if sistema in ["Linux", "Linux2"]:
             try:
-                self.janela_principal.tk.call('wm', 'transient', self.janela_principal._w, '')
+                # REMOVIDO: self.janela_principal.tk.call('wm', 'transient', self.janela_principal._w, '')
+
+                # Define o tipo de janela no X11 para evitar travamento em primeiro plano (Always on Top)
+                self.janela_principal.tk.call(
+                    'wm', 'attributes', self.janela_principal._w,
+                    '-type', 'utility'  # 'utility' ou 'normal' permite desfocar/ir para trás
+                )
             except Exception:
                 pass
 
@@ -34,8 +40,12 @@ class JanelaPrincipal:
 
         # 4. Exibe a janela totalmente carregada
         self.janela_principal.deiconify()
-        self.janela_principal.lift()
-        self.janela_principal.focus_force()
+
+        # REMOVIDO: self.janela_principal.lift()
+        # REMOVIDO: self.janela_principal.focus_force()
+
+        # Use apenas o focus simples (opcional)
+        self.janela_principal.focus()
 
     def _criar_layout(self):
         self.controles['janela_principal'] = self.janela_principal
