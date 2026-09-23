@@ -57,7 +57,11 @@ class JanelaPrincipal(QMainWindow):
         self.setFixedSize(self.sizeHint())
 
     def _criar_barra_menu(self):
-        pass
+        self.menu_arquivo = self.barra_titulo.adicionar_submenu("Arquivo")
+        self.controles['menu_arquivo'] = self.menu_arquivo
+
+        self.menu_ajuda = self.barra_titulo.adicionar_submenu("Ajuda")
+        self.controles['menu_ajuda'] = self.menu_ajuda
 
     def _criar_layout(self):
         self.controles['janela_principal'] = self

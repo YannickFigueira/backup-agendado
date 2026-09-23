@@ -279,6 +279,7 @@ class Funcoes:
 
         # --- Controle do Menu ---
         # --- Menu Arquivo ---
+        self.menu_arquivo = self.view.controles['menu_arquivo'].addAction("Configurações", lambda: self.abrir_janela_configuracoes(nome_tarefa))
         """
         self.menu_arquivo = self.view.controles['menu_btn'].adicionar_submenu("Arquivo")
         self.menu_arquivo.add_command(label="Configurações",
@@ -317,6 +318,8 @@ class Funcoes:
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
         # --- Inicialização ---
+        log_mensagem("Reativar")
+        return
         self.carregar_cmb_selecao()
         self.atualizar_configuracao()
 
@@ -375,34 +378,35 @@ class Funcoes:
     # --- Execução das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):
         global editando_novos_dados, configuracao_aberta, carregar_dados
-        self.view.controles['janela_principal'].attributes("-topmost", False)
+        #self.view.controles['janela_principal'].attributes("-topmost", False)
         configuracao_aberta = True
         # 1. Cria a parte visual
-        visual = JanelaConfiguracao(self.view.controles['janela_principal'])
+        visual = JanelaConfiguracao(self.view)
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
 
-        logica.centralizar_janela("janela_configuracao", self.view.controles['janela_principal'])
+        #logica.centralizar_janela("janela_configuracao", self.view)
 
         # --- Inicialização ---
         #nome_tarefa = logica.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
             logica.desabiliatar_menus_configuracao()
         else:
-            logica.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
-            logica.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "normal")
-            logica.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
-
-        logica.view.controles['btn_gravar'].configure(state="disabled")
+            log_mensagem("Reabilitar")
+            #logica.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
+            #logica.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "normal")
+            #logica.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
+        """
+        ##logica.view.controles['btn_gravar'].clickedConnect(state="disabled")
         qtd_origem = len(self.view.controles['cmb_selecao'].cget('values'))
         qtd_destino = len(logica.view.controles['cmb_selecao'].cget('values'))
         if qtd_origem < qtd_destino:
             logica.carregar_cmb_selecao()
             editando_novos_dados = False
             logica.atualizar_configuracao()
-
-        logica.view.controles['janela_configuracao'].wait_window()
+        """
+        #logica.view.controles['janela_configuracao'].wait_window()
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
         nome_tarefa = self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
@@ -413,7 +417,8 @@ class Funcoes:
             nome_tarefa = self.carregar_cmb_selecao()
             hora = carregar_dados['tarefas'][nome_tarefa]['hora']
             minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
-            self.view.controles['lbl_hora_execucao'].configure(text=f"{hora}:{minuto}")
+            self.view.controles['lbl_hora_execucao'].setText(f"{hora}:{minuto}")
+        visual.exec()
 
     def abrir_janela_nova_tarefa(self):
         global pasta_origem, pasta_destino, nova_tarefa_aberta

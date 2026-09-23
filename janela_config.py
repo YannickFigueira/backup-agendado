@@ -1,185 +1,197 @@
-import tkinter as tk
-import customtkinter as ctk
+import platform
+from PyQt6.QtWidgets import (
+    QDialog, QWidget, QFrame, QLabel, QComboBox, QLineEdit,
+    QPushButton, QCheckBox, QTimeEdit, QGridLayout, QHBoxLayout, QVBoxLayout
+)
+from PyQt6.QtCore import Qt, QTime
 
 import config
-import barra_menu
-from seletor_tempo import TimeSelector
+import tema
+from barra_titulo import BarraTituloCustomizada
+
+sistema = platform.system()
 
 
-class JanelaConfiguracao:
-    def __init__(self, janela):
-        self.janela_configuracao = ctk.CTkToplevel(janela)
-        self.janela_configuracao.title("Configurações")
-        self.janela_configuracao.overrideredirect(True)
-        #self.janela_config.geometry("600x400")
-        # Garante que esta janela apareça SEMPRE por cima da principal
-        self.janela_configuracao.transient(janela)
+class JanelaConfiguracao(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        self.nome_janela = "configuracao"  # <-- Identificador para o controlador
+        # 1. Configurações de Janela Frameless e Comportamento
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+
+        if sistema in ["Linux", "Linux2"]:
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.Tool)
+
+        self.setWindowTitle("Configurações")
+        self.nome_janela = "configuracao"  # Identificador para o controlador
         self.controles = {}
 
+        # 2. Estrutura Base Layout Geral
+        layout_geral = QVBoxLayout(self)
+        layout_geral.setContentsMargins(1, 1, 1, 1)
+        layout_geral.setSpacing(0)
+
+        # 3. Barra de Título Customizada
+        self.barra_titulo = BarraTituloCustomizada(self, titulo="Configurações")
+        layout_geral.addWidget(self.barra_titulo)
+
+        # 4. Conteúdo Central
+        self.conteudo_widget = QWidget()
+        layout_geral.addWidget(self.conteudo_widget, stretch=1)
+
+        # 5. Montagem da Interface e Tema
         self._criar_layout()
-        barra_menu.criar_barra_menu(self, self.janela_configuracao.title(), 'janela_configuracao', True)
+        self._criar_barra_menu()
+
+        tema.conectar_mudanca_tema(self)
+        tema.atualizar_tema(self)
+
+        # Trava o tamanho de acordo com os componentes organizados
+        self.adjustSize()
+        self.setFixedSize(self.sizeHint())
+
+    def _criar_barra_menu(self):
+        pass
 
     def _criar_layout(self):
-        # --- Controle da janela ---
-        self.controles['janela_configuracao'] = self.janela_configuracao
-        # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
-        self.janela_configuracao.grab_set()
-        self.janela_configuracao.focus_force()
+        self.controles['janela_configuracao'] = self
 
-        # 3. Intercepta o clique no botão 'X' de fechar a Toplevel
-        def ao_fechar():
-            # Libera o bloqueio antes de destruir
-            self.janela_configuracao.grab_release()
-            self.janela_configuracao.destroy()
+        layout_conteudo = QVBoxLayout(self.conteudo_widget)
+        layout_conteudo.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
+        layout_conteudo.setSpacing(config.ESPACO)
 
-        self.janela_configuracao.protocol("WM_DELETE_WINDOW", ao_fechar)
+        # =========================================================================
+        # FRAME DE CAMPOS (Seleção, Tarefa e Horário)
+        # =========================================================================
+        self.frame_campos = QFrame()
+        grid_campos = QGridLayout(self.frame_campos)
+        grid_campos.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
+        grid_campos.setSpacing(config.ESPACO)
 
-        ## Painel da janela
-        self.frame_campos = ctk.CTkFrame(self.janela_configuracao)
-        self.frame_campos.grid(row=1, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="ew")
+        # Selecionar
+        self.lbl_selecao = QLabel("Selecionar:")
+        grid_campos.addWidget(self.lbl_selecao, 0, 0)
 
-        self.frame_checkbox = ctk.CTkFrame(self.janela_configuracao)
-        self.frame_checkbox.grid(row=2, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="ew")
-
-        ## Controles do painel campos
-        linha_campo = 0
-
-        self.lbl_selecao = ctk.CTkLabel(self.frame_campos, text="Selecionar:", font=config.FONTE_ARIAL)
-        self.lbl_selecao.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-
-        self.cmb_selecao = ctk.CTkOptionMenu(self.frame_campos, font=config.FONTE_VAZIA)
-        self.cmb_selecao.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
+        self.cmb_selecao = QComboBox()
+        grid_campos.addWidget(self.cmb_selecao, 0, 1)
         self.controles['opt_selecao'] = self.cmb_selecao
 
-        # Container para agrupar os elementos da hora
-        self.frame_hora = ctk.CTkFrame(self.frame_campos, fg_color="transparent")
-        self.frame_hora.grid(row=linha_campo, rowspan=2, column=2, sticky="w")
+        # Tarefa
+        self.lbl_tarefa = QLabel("Tarefa:")
+        grid_campos.addWidget(self.lbl_tarefa, 1, 0)
 
-        self.lbl_horario = ctk.CTkLabel(self.frame_hora, text="Horário", font=config.FONTE_ARIAL)
-        self.lbl_horario.pack(side="top", anchor="center")
-        linha_campo += 1
-
-        self.lbl_tarefa = ctk.CTkLabel(self.frame_campos, text="Tarefa:", font=config.FONTE_ARIAL)
-        self.lbl_tarefa.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-
-        self.txt_tarefa = ctk.CTkEntry(self.frame_campos, width=100, font=config.FONTE_ARIAL)
-        self.txt_tarefa.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="we")
+        self.txt_tarefa = QLineEdit()
+        grid_campos.addWidget(self.txt_tarefa, 1, 1)
         self.controles['txt_tarefa'] = self.txt_tarefa
-        linha_campo += 1
 
-        # Seletor de Horas
-        self.spin_hora = TimeSelector(
-            self.frame_hora,
-            values=[f"{h:02d}" for h in range(24)],
-            initial_value="17",
-            width=70,
-            font=config.FONTE_VAZIA
-        )
-        self.spin_hora.pack(side="left", padx=2)
+        # Seletor de Horário (Sub-frame)
+        self.frame_hora = QFrame()
+        layout_hora = QVBoxLayout(self.frame_hora)
+        layout_hora.setContentsMargins(0, 0, 0, 0)
+        layout_hora.setSpacing(2)
 
-        # Separador ":"
-        lbl_pontos = ctk.CTkLabel(self.frame_hora, text=":", font=("Arial", 16, "bold"))
-        lbl_pontos.pack(side="left", padx=2)
+        self.lbl_horario = QLabel("Horário")
+        self.lbl_horario.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_hora.addWidget(self.lbl_horario)
 
-        # Seletor de Minutos
-        self.spin_min = TimeSelector(
-            self.frame_hora,
-            values=[f"{m:02d}" for m in range(0, 60, 5)],
-            initial_value="00",
-            width=70,
-            font=config.FONTE_VAZIA
-        )
-        self.spin_min.pack(side="left", padx=2)
+        # QTimeEdit configurado para formato HH:mm com passo de 5 min
+        self.time_edit = QTimeEdit()
+        self.time_edit.setDisplayFormat("HH:mm")
+        self.time_edit.setTime(QTime(17, 0))
+        layout_hora.addWidget(self.time_edit)
 
-        self.controles['spin_hora'] = self.spin_hora
-        self.controles['spin_min'] = self.spin_min
+        # Adiciona o agrupador de horário estendendo pelas 2 linhas do Grid
+        grid_campos.addWidget(self.frame_hora, 0, 2, 2, 1, Qt.AlignmentFlag.AlignCenter)
 
-        # --- Painel Checkbutton ---
-        linha_check = 0
-        self.var_desabilitar = ctk.BooleanVar()
-        self.chk_desabilitar = ctk.CTkCheckBox(self.frame_checkbox, text="Desabilitar", variable=self.var_desabilitar)
-        self.chk_desabilitar.grid(row=linha_check, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_desabilitar'] = self.var_desabilitar
+        self.controles['spin_hora'] = self.time_edit
+        self.controles['spin_min'] = self.time_edit
 
-        self.var_desligar = ctk.BooleanVar()
-        self.chk_desligar = ctk.CTkCheckBox(self.frame_checkbox, text="Desligar", variable=self.var_desligar)
-        self.chk_desligar.grid(row=linha_check, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_desligar'] = self.var_desligar
-        linha_check += 1
+        layout_conteudo.addWidget(self.frame_campos)
 
-        self.var_diariamente = ctk.BooleanVar(value=True)
-        self.chk_diariamente = ctk.CTkCheckBox(self.frame_checkbox, text="Diariamente", variable=self.var_diariamente)
-        self.chk_diariamente.grid(row=linha_check, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_diariamente'] = self.var_diariamente
+        # =========================================================================
+        # FRAME CHECKBOXES E BOTÃO
+        # =========================================================================
+        self.frame_checkbox = QFrame()
+        grid_check = QGridLayout(self.frame_checkbox)
+        grid_check.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
+        grid_check.setSpacing(config.ESPACO)
+
+        # Linha 0: Desabilitar / Desligar
+        self.chk_desabilitar = QCheckBox("Desabilitar")
+        grid_check.addWidget(self.chk_desabilitar, 0, 0)
+        self.controles['var_desabilitar'] = self.chk_desabilitar
+
+        self.chk_desligar = QCheckBox("Desligar")
+        grid_check.addWidget(self.chk_desligar, 0, 1)
+        self.controles['var_desligar'] = self.chk_desligar
+
+        # Linha 1: Diariamente / Quarta-Feira
+        self.chk_diariamente = QCheckBox("Diariamente")
+        self.chk_diariamente.setChecked(True)
+        grid_check.addWidget(self.chk_diariamente, 1, 0)
+        self.controles['var_diariamente'] = self.chk_diariamente
         self.controles['chk_diariamente'] = self.chk_diariamente
 
-        self.var_quarta = ctk.BooleanVar(value=False)
-        self.chk_quarta = ctk.CTkCheckBox(self.frame_checkbox, text="Quarta-Feira", variable=self.var_quarta)
-        self.chk_quarta.grid(row=linha_check, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_quarta'] = self.var_quarta
+        self.chk_quarta = QCheckBox("Quarta-Feira")
+        grid_check.addWidget(self.chk_quarta, 1, 1)
+        self.controles['var_quarta'] = self.chk_quarta
         self.controles['chk_quarta'] = self.chk_quarta
-        linha_check += 1
 
-        self.var_domingo = ctk.BooleanVar(value=False)
-        self.chk_domingo = ctk.CTkCheckBox(self.frame_checkbox, text="Domingo", variable=self.var_domingo)
-        self.chk_domingo.grid(row=linha_check, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_domingo'] = self.var_domingo
+        # Linha 2: Domingo / Quinta-Feira
+        self.chk_domingo = QCheckBox("Domingo")
+        grid_check.addWidget(self.chk_domingo, 2, 0)
+        self.controles['var_domingo'] = self.chk_domingo
         self.controles['chk_domingo'] = self.chk_domingo
 
-        self.var_quinta = ctk.BooleanVar(value=False)
-        self.chk_quinta = ctk.CTkCheckBox(self.frame_checkbox, text="Quinta-Feira", variable=self.var_quinta)
-        self.chk_quinta.grid(row=linha_check, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_quinta'] = self.var_quinta
+        self.chk_quinta = QCheckBox("Quinta-Feira")
+        grid_check.addWidget(self.chk_quinta, 2, 1)
+        self.controles['var_quinta'] = self.chk_quinta
         self.controles['chk_quinta'] = self.chk_quinta
-        linha_check += 1
 
-        self.var_segunda = ctk.BooleanVar(value=False)
-        self.chk_segunda = ctk.CTkCheckBox(self.frame_checkbox, text="Segunda-Feira", variable=self.var_segunda)
-        self.chk_segunda.grid(row=linha_check, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_segunda'] = self.var_segunda
+        # Linha 3: Segunda-Feira / Sexta-Feira
+        self.chk_segunda = QCheckBox("Segunda-Feira")
+        grid_check.addWidget(self.chk_segunda, 3, 0)
+        self.controles['var_segunda'] = self.chk_segunda
         self.controles['chk_segunda'] = self.chk_segunda
 
-        self.var_sexta = ctk.BooleanVar(value=False)
-        self.chk_sexta = ctk.CTkCheckBox(self.frame_checkbox, text="Sexta-Feira", variable=self.var_sexta)
-        self.chk_sexta.grid(row=linha_check, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_sexta'] = self.var_sexta
+        self.chk_sexta = QCheckBox("Sexta-Feira")
+        grid_check.addWidget(self.chk_sexta, 3, 1)
+        self.controles['var_sexta'] = self.chk_sexta
         self.controles['chk_sexta'] = self.chk_sexta
-        linha_check += 1
 
-        self.var_terca = ctk.BooleanVar(value=False)
-        self.chk_terca = ctk.CTkCheckBox(self.frame_checkbox, text="Terça-Feira", variable=self.var_terca)
-        self.chk_terca.grid(row=linha_check, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_terca'] = self.var_terca
+        # Linha 4: Terça-Feira / Sábado
+        self.chk_terca = QCheckBox("Terça-Feira")
+        grid_check.addWidget(self.chk_terca, 4, 0)
+        self.controles['var_terca'] = self.chk_terca
         self.controles['chk_terca'] = self.chk_terca
 
-        self.var_sabado = ctk.BooleanVar(value=False)
-        self.chk_sabado = ctk.CTkCheckBox(self.frame_checkbox, text="Sábado", variable=self.var_sabado)
-        self.chk_sabado.grid(row=linha_check, column=1, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-        self.controles['var_sabado'] = self.var_sabado
+        self.chk_sabado = QCheckBox("Sábado")
+        grid_check.addWidget(self.chk_sabado, 4, 1)
+        self.controles['var_sabado'] = self.chk_sabado
         self.controles['chk_sabado'] = self.chk_sabado
-        linha_check += 1
 
-        largura_botao = 20
-        self.btn_gravar = ctk.CTkButton(self.frame_checkbox, text="Gravar Tarefa")
-        self.btn_gravar.grid(row=0, rowspan=5, column=2, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
+        # Botão Gravar Tarefa (Ocupa as 5 linhas ao lado dos checkboxes)
+        self.btn_gravar = QPushButton("Gravar Tarefa")
+        self.btn_gravar.setObjectName("BtnAcao")
+        grid_check.addWidget(self.btn_gravar, 0, 2, 5, 1)
         self.controles['btn_gravar'] = self.btn_gravar
-        
-        self.moldura_pastas = ctk.CTkFrame(self.frame_checkbox)
-        self.moldura_pastas.grid(row=linha_check, column=0,
-                                 columnspan=3, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
 
-        self.lbl_pastas = ctk.CTkLabel(
-            self.moldura_pastas,
-            justify="left",
-            wraplength=370,
-            font=config.FONTE_VAZIA
-        )
-        self.lbl_pastas.pack(anchor="w", padx=(10, 4), pady=(10, 4))
+        # Moldura inferior de informações/pastas
+        self.moldura_pastas = QFrame()
+        self.moldura_pastas.setObjectName("MolduraLog")
+        self.moldura_pastas.setFrameShape(QFrame.Shape.StyledPanel)
+        self.moldura_pastas.setFrameShadow(QFrame.Shadow.Sunken)
+
+        layout_pastas = QVBoxLayout(self.moldura_pastas)
+        layout_pastas.setContentsMargins(10, 10, 10, 10)
+
+        self.lbl_pastas = QLabel("")
+        self.lbl_pastas.setWordWrap(True)
+        self.lbl_pastas.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        layout_pastas.addWidget(self.lbl_pastas)
+
+        grid_check.addWidget(self.moldura_pastas, 5, 0, 1, 3)
         self.controles['lbl_pastas'] = self.lbl_pastas
 
-    def _criar_barra_menu_old(self):
-        self.barra_menu = tk.Menu(self.janela_configuracao)
-        self.janela_configuracao.config(menu=self.barra_menu)
-        self.controles['barra_menu'] = self.barra_menu
+        layout_conteudo.addWidget(self.frame_checkbox)
