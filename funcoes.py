@@ -268,17 +268,18 @@ class Funcoes:
         self.criar_bandeja()
 
         # Passa apenas +X+Y (ou -X-Y para borda direita/inferior)
-        self.view.controles['janela_principal'].geometry(f"+{pos_x}+{pos_y}")
+        #self.view.geometry(f"+{pos_x}+{pos_y}")
 
         # --- Controle do Título ---
         # Permite arrastar a janela clicando no seu frame_titulo customizado
-        self.view.controles['frame_titulo'].bind("<Button-1>", self._iniciar_arraste)
-        self.view.controles['frame_titulo'].bind("<B1-Motion>", lambda e: self._arrastar_janela(e, "janela_principal"))
+        #self.view.controles['frame_titulo'].bind("<Button-1>", self._iniciar_arraste)
+        #self.view.controles['frame_titulo'].bind("<B1-Motion>", lambda e: self._arrastar_janela(e, "janela_principal"))
         #self.view.controles['btn_minimizar'].configure(command=lambda: self.view.controles['janela_principal'].withdraw())
-        self.view.controles['btn_fechar'].configure(command=lambda: self.esconder_janela())
+        #self.view.controles['btn_fechar'].configure(command=lambda: self.esconder_janela())
 
         # --- Controle do Menu ---
         # --- Menu Arquivo ---
+        """
         self.menu_arquivo = self.view.controles['menu_btn'].adicionar_submenu("Arquivo")
         self.menu_arquivo.add_command(label="Configurações",
                                       command=lambda: self.abrir_janela_configuracoes(nome_tarefa))
@@ -311,6 +312,7 @@ class Funcoes:
         if nome_tarefa == "inicial":
             caixa_mensagem.info("Aviso", "Insira a primeira tarefa", self.view.controles['janela_principal'])
             self.abrir_janela_configuracoes(nome_tarefa)
+        """
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
@@ -569,9 +571,10 @@ class Funcoes:
 
     def carregar_cmb_selecao(self):
         lista_nomes = list(carregar_dados['tarefas'].keys())
-        self.view.controles['cmb_selecao'].configure(values=list(lista_nomes))
-        self.view.controles['cmb_selecao'].set(lista_nomes[0])
-        nome_tarefa = self.view.controles['cmb_selecao'].get()
+        cmb_selecao = self.view.controles['cmb_selecao']
+        cmb_selecao.addItems(lista_nomes)
+        cmb_selecao.setCurrentIndex(0)
+        nome_tarefa = self.view.controles['cmb_selecao'].currentText()
 
         return nome_tarefa
 
@@ -603,10 +606,13 @@ class Funcoes:
         self.view.controles[controle].insert(0, selecionar_pasta())
 
     def esconder_janela(self):
-        self.view.controles['janela_principal'].withdraw()
+        self.view.withdraw()
 
     def restaurar_janela(self):
-        self.view.controles['janela_principal'].deiconify()
+        # Restaura a janela se ela estiver minimizada ou oculta
+        self.view.showNormal()  # Ou self.view.show() se ela estava apenas oculta (.hide())
+        self.view.activateWindow()  # Dá o foco para a janela
+        self.view.raise_()  # Traz a janela para a frente de outras janelas
 
     def fechar_programa(self, icon=None):
         resposta = caixa_mensagem.ok_cancel("Alerta",
@@ -691,7 +697,7 @@ class Funcoes:
             self.qt_tray.show()
 
             # 3. Processa os eventos do Qt periodicamente via Tkinter (Sem travar!)
-            self._processar_eventos_qt()
+            #self._processar_eventos_qt()
 
             return self.qt_tray
 
@@ -743,12 +749,14 @@ class Funcoes:
         pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         self.atualizar_horario(nome_tarefa)
         if nome_tarefa != "inicial":
-            copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
+            pass
+            log_mensagem("Reativar comando na linha 750")
+            #copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
 
     def atualizar_horario(self, nome_tarefa):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
         minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
-        self.view.controles['lbl_hora_execucao'].configure(text=f"{hora_atualizada}:{minuto_atualizado}")
+        self.view.controles['lbl_hora_execucao'].setText(f"{hora_atualizada}:{minuto_atualizado}")
 
     # --- Funções da Janela Configurações ---
     def desabiliatar_menus_configuracao(self):

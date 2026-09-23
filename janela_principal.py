@@ -110,12 +110,14 @@ class JanelaPrincipal(QMainWindow):
 
         # Botão Executar
         self.btn_executar = QPushButton("Executar Tarefa")
+        self.btn_executar.setObjectName("BtnAcao")
         layout_controls.addWidget(self.btn_executar, linha_esq, 0, 1, 2)
         self.controles['btn_executar'] = self.btn_executar
         linha_esq += 1
 
         # Botão Pausar
         self.btn_pausar = QPushButton("Pausar Tarefa")
+        self.btn_pausar.setObjectName("BtnAcao")
         self.btn_pausar.setEnabled(False)
         layout_controls.addWidget(self.btn_pausar, linha_esq, 0, 1, 2)
         self.controles['btn_pausar'] = self.btn_pausar
@@ -142,6 +144,7 @@ class JanelaPrincipal(QMainWindow):
 
         # Botão Encerrar
         self.btn_encerrar = QPushButton("Encerrar Tarefa")
+        self.btn_encerrar.setObjectName("BtnAcao")
         layout_controls.addWidget(self.btn_encerrar, linha_esq, 0, 1, 2)
         self.controles['btn_encerrar'] = self.btn_encerrar
 
