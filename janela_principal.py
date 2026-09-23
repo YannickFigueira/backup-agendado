@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 import config
-import barra_menu
 import tema
 from barra_titulo import BarraTituloCustomizada
 
@@ -63,72 +62,79 @@ class JanelaPrincipal(QMainWindow):
     def _criar_layout(self):
         self.controles['janela_principal'] = self
 
+        # Layout Principal Horizontal (Esquerda vs Direita)
         layout_conteudo = QHBoxLayout(self.conteudo_widget)
         layout_conteudo.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
         layout_conteudo.setSpacing(config.ESPACO)
 
-        # ==================== PAINEL ESQUERDO (CONTROLES) ====================
+        # =========================================================================
+        # PAINEL ESQUERDO (CONTROLES)
+        # =========================================================================
         self.frame_controls = QFrame()
-        layout_controls = QGridLayout(self.frame_controls)
+        layout_controls = QVBoxLayout(self.frame_controls)
         layout_controls.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
         layout_controls.setSpacing(config.ESPACO)
 
         layout_conteudo.addWidget(self.frame_controls)
         self.controles['frame_controls'] = self.frame_controls
 
-        linha_esq = 0
+        # Grid interno para Seleção, Horário e Tamanho
+        grid_esq = QGridLayout()
+        grid_esq.setSpacing(8)
 
         # Seleção de Tarefa
         self.lbl_selecao = QLabel("Selecionar Tarefa:")
-        layout_controls.addWidget(self.lbl_selecao, linha_esq, 0)
+        grid_esq.addWidget(self.lbl_selecao, 0, 0)
 
         self.cmb_selecao = QComboBox()
-        layout_controls.addWidget(self.cmb_selecao, linha_esq, 1)
+        grid_esq.addWidget(self.cmb_selecao, 0, 1)
         self.controles['cmb_selecao'] = self.cmb_selecao
-        linha_esq += 1
 
         # Horário
         self.lbl_horario = QLabel("Horário:")
-        layout_controls.addWidget(self.lbl_horario, linha_esq, 0)
+        grid_esq.addWidget(self.lbl_horario, 1, 0)
 
         self.lbl_hora_execucao = QLabel("--:--")
         self.lbl_hora_execucao.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout_controls.addWidget(self.lbl_hora_execucao, linha_esq, 1)
+        grid_esq.addWidget(self.lbl_hora_execucao, 1, 1)
         self.controles['lbl_hora_execucao'] = self.lbl_hora_execucao
-        linha_esq += 1
 
         # Tamanho
         self.lbl_tamanho = QLabel("Tamanho:")
         self.lbl_tamanho.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        layout_controls.addWidget(self.lbl_tamanho, linha_esq, 0)
+        grid_esq.addWidget(self.lbl_tamanho, 2, 0)
 
         self.lbl_tamanho_exibir = QLabel("-" * 10)
         self.lbl_tamanho_exibir.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout_controls.addWidget(self.lbl_tamanho_exibir, linha_esq, 1)
+        grid_esq.addWidget(self.lbl_tamanho_exibir, 2, 1)
         self.controles['lbl_tamanho_exibir'] = self.lbl_tamanho_exibir
-        linha_esq += 1
+
+        layout_controls.addLayout(grid_esq)
 
         # Botão Executar
         self.btn_executar = QPushButton("Executar Tarefa")
         self.btn_executar.setObjectName("BtnAcao")
-        layout_controls.addWidget(self.btn_executar, linha_esq, 0, 1, 2)
+        layout_controls.addWidget(self.btn_executar)
         self.controles['btn_executar'] = self.btn_executar
-        linha_esq += 1
 
         # Botão Pausar
         self.btn_pausar = QPushButton("Pausar Tarefa")
         self.btn_pausar.setObjectName("BtnAcao")
         self.btn_pausar.setEnabled(False)
-        layout_controls.addWidget(self.btn_pausar, linha_esq, 0, 1, 2)
+        layout_controls.addWidget(self.btn_pausar)
         self.controles['btn_pausar'] = self.btn_pausar
-        linha_esq += 1
 
-        self.controles['linha_painel_esquerdo'] = linha_esq
+        # Divisor / Marcador "EM EXECUÇÃO"
+        lbl_divisor = QLabel("───── EM EXECUÇÃO ─────")
+        lbl_divisor.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_controls.addWidget(lbl_divisor)
 
-        # Moldura de execução
-        linha_esq += 1
+        # Moldura de execução (Com Borda Visível)
         self.moldura_execucao_borda = QFrame()
         self.moldura_execucao_borda.setFixedHeight(110)
+        self.moldura_execucao_borda.setObjectName("MolduraLog")
+        self.moldura_execucao_borda.setFrameShape(QFrame.Shape.StyledPanel)
+        self.moldura_execucao_borda.setFrameShadow(QFrame.Shadow.Sunken)
 
         layout_moldura_exec = QVBoxLayout(self.moldura_execucao_borda)
         layout_moldura_exec.setContentsMargins(10, 10, 4, 4)
@@ -138,29 +144,30 @@ class JanelaPrincipal(QMainWindow):
         self.lbl_multi_execucao.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         layout_moldura_exec.addWidget(self.lbl_multi_execucao)
 
-        layout_controls.addWidget(self.moldura_execucao_borda, linha_esq, 0, 5, 2)
+        layout_controls.addWidget(self.moldura_execucao_borda)
         self.controles['lbl_multi_execucao'] = self.lbl_multi_execucao
-        linha_esq += 5
 
         # Botão Encerrar
         self.btn_encerrar = QPushButton("Encerrar Tarefa")
         self.btn_encerrar.setObjectName("BtnAcao")
-        layout_controls.addWidget(self.btn_encerrar, linha_esq, 0, 1, 2)
+        layout_controls.addWidget(self.btn_encerrar)
         self.controles['btn_encerrar'] = self.btn_encerrar
 
-        # ==================== PAINEL DIREITO (ANDAMENTO) ====================
+        # =========================================================================
+        # PAINEL DIREITO (ANDAMENTO)
+        # =========================================================================
         self.frame_andamento = QFrame()
-        layout_andamento = QGridLayout(self.frame_andamento)
+        layout_andamento = QVBoxLayout(self.frame_andamento)
         layout_andamento.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
         layout_andamento.setSpacing(config.ESPACO)
 
-        layout_conteudo.addWidget(self.frame_andamento)
+        layout_conteudo.addWidget(self.frame_andamento, stretch=1)
 
-        linha_dir = 0
-
-        # Moldura de andamento atual
+        # Moldura de andamento atual (Com Borda Visível)
         self.moldura_andamento_atual = QFrame()
-        self.moldura_andamento_atual.setFixedHeight(360)
+        self.moldura_andamento_atual.setObjectName("MolduraLog")
+        self.moldura_andamento_atual.setFrameShape(QFrame.Shape.StyledPanel)
+        self.moldura_andamento_atual.setFrameShadow(QFrame.Shadow.Sunken)
 
         layout_moldura_and = QVBoxLayout(self.moldura_andamento_atual)
         layout_moldura_and.setContentsMargins(10, 10, 4, 4)
@@ -170,18 +177,20 @@ class JanelaPrincipal(QMainWindow):
         self.lbl_multi_andamento.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         layout_moldura_and.addWidget(self.lbl_multi_andamento)
 
-        layout_andamento.addWidget(self.moldura_andamento_atual, linha_dir, 0, 2, 3)
+        layout_andamento.addWidget(self.moldura_andamento_atual, stretch=1)
         self.controles['lbl_multi_andamento'] = self.lbl_multi_andamento
-        linha_dir += 2
 
-        # Rótulos Copiado / Copiado Tamanho
+        # Rodapé do Progresso (Copiado + Barra de Progresso)
+        layout_progresso_bottom = QHBoxLayout()
+        layout_progresso_bottom.setSpacing(config.ESPACO)
+
         self.lbl_copiado = QLabel("Copiado:")
         self.lbl_copiado.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        layout_andamento.addWidget(self.lbl_copiado, linha_dir, 0)
+        layout_progresso_bottom.addWidget(self.lbl_copiado)
 
         self.lbl_copiado_tamanho = QLabel("-" * 10)
         self.lbl_copiado_tamanho.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout_andamento.addWidget(self.lbl_copiado_tamanho, linha_dir, 1)
+        layout_progresso_bottom.addWidget(self.lbl_copiado_tamanho)
         self.controles['lbl_copiado_tamanho'] = self.lbl_copiado_tamanho
 
         # Barra de Progresso
@@ -192,7 +201,9 @@ class JanelaPrincipal(QMainWindow):
         self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.progress_bar.setFormat("0.000%")
 
-        layout_andamento.addWidget(self.progress_bar, linha_dir, 2, Qt.AlignmentFlag.AlignRight)
+        layout_progresso_bottom.addWidget(self.progress_bar, stretch=1)
+
+        layout_andamento.addLayout(layout_progresso_bottom)
 
         self.controles['progress_bar'] = self.progress_bar
         self.controles['lbl_porcentagem'] = self.progress_bar
