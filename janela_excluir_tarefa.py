@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-import estilo
+import config
 
 class JanelaExcluirTarefa:
     def __init__(self, janela):
@@ -25,20 +25,20 @@ class JanelaExcluirTarefa:
 
         ## Painel da janela
         self.frame_campos = ttk.Frame(self.janela_excluir_tarefa)
-        self.frame_campos.grid(row=0, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
+        self.frame_campos.grid(row=0, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="ew")
 
         ## Controles do painel campos
         linha_campo = 0
 
-        self.lbl_selecao = ttk.Label(self.frame_campos, text="Selecionar:", font=estilo.FONTE_ARIAL)
-        self.lbl_selecao.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.lbl_selecao = ttk.Label(self.frame_campos, text="Selecionar:", font=config.FONTE_ARIAL)
+        self.lbl_selecao.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
 
-        self.cmb_selecao = ttk.Combobox(self.frame_campos, font=estilo.FONTE_VAZIA, state="readonly")
-        self.cmb_selecao.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO,
+        self.cmb_selecao = ttk.Combobox(self.frame_campos, font=config.FONTE_VAZIA, state="readonly")
+        self.cmb_selecao.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO,
                               sticky="nsew")
         self.controles['cmb_selecao'] = self.cmb_selecao
         linha_campo += 1
 
         self.btn_excluir = ttk.Button(self.frame_campos, text="Excluir Tarefa", style="Fonte.TButton")
-        self.btn_excluir.grid(row=linha_campo, column=0, columnspan=2, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.btn_excluir.grid(row=linha_campo, column=0, columnspan=2, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
         self.controles['btn_excluir'] = self.btn_excluir

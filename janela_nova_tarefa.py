@@ -2,7 +2,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 import barra_menu
-import estilo
+import config
 
 class JanelaNovaTarefa:
     def __init__(self, janela):
@@ -29,42 +29,42 @@ class JanelaNovaTarefa:
 
         ## Painel da janela
         self.frame_campos = ctk.CTkFrame(self.janela_nova_tarefa)
-        self.frame_campos.grid(row=1, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="ew")
+        self.frame_campos.grid(row=1, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="ew")
 
         ## Controles do painel campos
         linha_campo = 0
 
-        self.lbl_origem = ctk.CTkLabel(self.frame_campos, text="Origem:", font=estilo.FONTE_ARIAL)
-        self.lbl_origem.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.lbl_origem = ctk.CTkLabel(self.frame_campos, text="Origem:", font=config.FONTE_ARIAL)
+        self.lbl_origem.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
 
         largura_texto = 300
-        self.txt_origem = ctk.CTkEntry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
-        self.txt_origem.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.txt_origem = ctk.CTkEntry(self.frame_campos, width=largura_texto, font=config.FONTE_ARIAL)
+        self.txt_origem.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO)
         self.controles['txt_origem'] = self.txt_origem
 
         self.btn_selecionar_origem = ctk.CTkButton(self.frame_campos, text="...", width=40)
-        self.btn_selecionar_origem.grid(row=linha_campo, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.btn_selecionar_origem.grid(row=linha_campo, column=2, padx=config.ESPACO, pady=config.ESPACO)
         self.controles['btn_selecionar_origem'] = self.btn_selecionar_origem
         linha_campo += 1
 
-        self.lbl_destino = ctk.CTkLabel(self.frame_campos, text="Destino:", font=estilo.FONTE_ARIAL)
-        self.lbl_destino.grid(row=linha_campo, column=0, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="w")
+        self.lbl_destino = ctk.CTkLabel(self.frame_campos, text="Destino:", font=config.FONTE_ARIAL)
+        self.lbl_destino.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
 
-        self.txt_destino = ctk.CTkEntry(self.frame_campos, width=largura_texto, font=estilo.FONTE_ARIAL)
-        self.txt_destino.grid(row=linha_campo, column=1, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.txt_destino = ctk.CTkEntry(self.frame_campos, width=largura_texto, font=config.FONTE_ARIAL)
+        self.txt_destino.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO)
         self.controles['txt_destino'] = self.txt_destino
 
         self.btn_selecionar_destino = ctk.CTkButton(self.frame_campos, text="...", width=40)
-        self.btn_selecionar_destino.grid(row=linha_campo, column=2, padx=estilo.ESPACO, pady=estilo.ESPACO)
+        self.btn_selecionar_destino.grid(row=linha_campo, column=2, padx=config.ESPACO, pady=config.ESPACO)
         self.controles['btn_selecionar_destino'] = self.btn_selecionar_destino
         linha_campo += 1
 
         self.btn_adicionar = ctk.CTkButton(self.frame_campos, text="Adicionar pasta")
-        self.btn_adicionar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.btn_adicionar.grid(row=linha_campo, column=0, columnspan=3, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
         self.controles['btn_adicionar'] = self.btn_adicionar
         linha_campo += 1
 
         self.btn_salvar = ctk.CTkButton(self.frame_campos, text="Salvar pastas")
-        self.btn_salvar.grid(row=linha_campo, column=0, columnspan=3, padx=estilo.ESPACO, pady=estilo.ESPACO, sticky="nsew")
+        self.btn_salvar.grid(row=linha_campo, column=0, columnspan=3, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
         self.btn_salvar.configure(state="disabled")
         self.controles['btn_salvar'] = self.btn_salvar

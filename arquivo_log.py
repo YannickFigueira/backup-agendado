@@ -2,7 +2,7 @@ import platform
 import subprocess
 from datetime import datetime
 
-from estilo import log_files
+from config import log_files
 
 def abrir_logs(view):
     arquivo = view.controles['cmb_selecao'].get()

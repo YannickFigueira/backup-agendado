@@ -8,7 +8,7 @@ import platform
 import caixa_mensagem
 import dados_tinydb
 from arquivo_log import gerar_arquivo_log, registrar_log
-from estilo import log_files
+from config import log_files
 
 # Aumenta o buffer interno do Windows no shutil para 16MB (o padrão é 64KB)
 # Isso reduz as chamadas de sistema e evita que o cache esvazie, mitigando as pausas.

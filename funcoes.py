@@ -18,7 +18,7 @@ from datetime import datetime
 from screeninfo import get_monitors
 
 import caixa_mensagem
-import verificarversao, dados_tinydb, copiar_arquivos, estilo
+import verificarversao, dados_tinydb, copiar_arquivos, config
 from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
@@ -291,7 +291,7 @@ class Funcoes:
         # -- Menu Ajuda --
         self.menu_ajuda = self.view.controles['menu_btn'].adicionar_submenu("Ajuda")
         self.menu_ajuda.add_command(label="Verificar atualização",
-                                      command=lambda: verificarversao.consultar_lancamento(estilo.REPO, estilo.VERSION, self.view.controles['janela_principal']))
+                                    command=lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view.controles['janela_principal']))
         self.menu_ajuda.add_command(label="Notas da versão",
               command=lambda: self.view.controles['lbl_multi_andamento'].configure  (text=extrair_ultima_versao_changelog()))
         self.menu_ajuda.add_command(label="Sobre", command=lambda: self.visitar_site())
@@ -299,7 +299,7 @@ class Funcoes:
         # --- Controle da Janela Principal ---
         #self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
         criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
-                                  espacox=estilo.ESPACOX, espacoy=estilo.ESPACOY)
+                                  espacox=config.ESPACOX, espacoy=config.ESPACOY)
 
         # --- Controle da janela ---
         self.view.controles['btn_executar'].configure(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['opt_selecao'].get()))
@@ -320,8 +320,8 @@ class Funcoes:
 
         # --- Controles da Janela Configurações ---
         self.view.controles['btn_fechar'].configure(command=lambda: self.fechar_janelas('janela_configuracao'))
-        #self.view.controles['opt_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
-        self.view.controles['opt_selecao'].configure(command=lambda _: self.atualizar_configuracao())
+        #self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
+        self.view.controles['cmb_selecao'].configure(command=lambda _: self.atualizar_configuracao())
         self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
         self.view.controles['btn_gravar'].configure(command=lambda: self.gravar_tarefa())
 
@@ -393,8 +393,8 @@ class Funcoes:
             logica.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
 
         logica.view.controles['btn_gravar'].configure(state="disabled")
-        qtd_origem = len(self.view.controles['opt_selecao'].cget('values'))
-        qtd_destino = len(logica.view.controles['opt_selecao'].cget('values'))
+        qtd_origem = len(self.view.controles['cmb_selecao'].cget('values'))
+        qtd_destino = len(logica.view.controles['cmb_selecao'].cget('values'))
         if qtd_origem < qtd_destino:
             logica.carregar_cmb_selecao()
             editando_novos_dados = False
@@ -547,7 +547,7 @@ class Funcoes:
                     break  # Tkinter foi fechado, interrompe a thread
 
             except Exception as e:
-                erros_log = gerar_arquivo_log(estilo.log_erros)
+                erros_log = gerar_arquivo_log(config.log_erros)
                 registrar_log(erros_log, f"[ERRO] Monitoramento das tarefas -> {e}")
 
                 # 3. Dorme 60 segundos
@@ -569,9 +569,9 @@ class Funcoes:
 
     def carregar_cmb_selecao(self):
         lista_nomes = list(carregar_dados['tarefas'].keys())
-        self.view.controles['opt_selecao'].configure(values=list(lista_nomes))
-        self.view.controles['opt_selecao'].set(lista_nomes[0])
-        nome_tarefa = self.view.controles['opt_selecao'].get()
+        self.view.controles['cmb_selecao'].configure(values=list(lista_nomes))
+        self.view.controles['cmb_selecao'].set(lista_nomes[0])
+        nome_tarefa = self.view.controles['cmb_selecao'].get()
 
         return nome_tarefa
 
@@ -706,7 +706,7 @@ class Funcoes:
                 MenuItem("Janela Principal", self.restaurar_janela),
                 MenuItem("Sair", self.fechar_programa),
             )
-            self.icon_tray = Icon("BackupAgendado", image, estilo.NOME_PROGRAMA, menu)
+            self.icon_tray = Icon("BackupAgendado", image, config.NOME_PROGRAMA, menu)
             self.icon_tray.run_detached()
             return self.icon_tray
 
@@ -769,7 +769,7 @@ class Funcoes:
                 nome_tarefa = self.carregar_cmb_selecao()
                 editando_excluir_dados = False
             else:
-                nome_tarefa = self.view.controles['opt_selecao'].get()
+                nome_tarefa = self.view.controles['cmb_selecao'].get()
             self.view.controles['txt_tarefa'].delete(0, "end")
             self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
             hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
@@ -865,7 +865,7 @@ class Funcoes:
                         editando_novos_dados = False
 
                     # Captura os dados
-                    nome_tarefa = self.view.controles['opt_selecao'].get()
+                    nome_tarefa = self.view.controles['cmb_selecao'].get()
                     tarefa = self.view.controles['txt_tarefa'].get().strip()
                     semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
                     diario = self.view.controles['var_diariamente'].get()
@@ -1053,7 +1053,7 @@ class Funcoes:
     def visitar_site(self):
         """Gera mensagem para visitar a página"""
         pagina = f"https://github.com/YannickFigueira"
-        resposta = caixa_mensagem.sim_nao("Sobre", f"{estilo.NOME_PROGRAMA} {estilo.VERSION}\n"
+        resposta = caixa_mensagem.sim_nao("Sobre", f"{config.NOME_PROGRAMA} {config.VERSION}\n"
                                                    f"Desenvolvedor YannickFigueira\n"
                                                    f"chronostimeinchain@gmail.com\n"
                                                    f"Deseja visitar a página", self.view.controles['janela_principal'])
