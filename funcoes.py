@@ -72,36 +72,6 @@ def selecionar_pasta():
     else:
         return ""
 
-## Container
-def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
-    """
-    :param janela_container:
-    :param texto:
-    :param linha:
-    :param espacox:
-    :param espacoy:
-    """
-    # 1. Criamos um container invisível para envelopar o separador completo
-    container = ctk.CTkFrame(janela_container)
-    container.grid(row=linha, columnspan=6, sticky="ew", padx=espacox, pady=espacoy)
-
-    # Configura o container para expandir as linhas laterais igualmente
-    container.columnconfigure(0, weight=1)
-    container.columnconfigure(2, weight=1)
-
-    # 2. Linha da Esquerda
-    sep_esquerda = ttk.Separator(container)
-    sep_esquerda.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-
-    # 3. O Texto Centralizado (com peso Bold/Negrito)
-    # Usamos o fundo padrão (background) do root para não dar corte de cor
-    label_texto = ctk.CTkLabel(container, text=texto, font=("", 10, "bold"))
-    label_texto.grid(row=0, column=1, sticky="ne")
-
-    # 4. Linha da Direita
-    sep_direita = ttk.Separator(container)
-    sep_direita.grid(row=0, column=2, sticky="ew", padx=(10, 0))
-
 ## Notas da versão
 def abrir_notas_versao():
     """
@@ -287,8 +257,6 @@ class Funcoes:
         self.atualizar_informacoes(nome_tarefa)
         if not nome_tarefa == "inicial":
             self.verificar_tarefa_executando()
-            #self.esconder_janela()
-            log_mensagem("Habilitar esconder a tela")
 
         self.criar_bandeja()
 
@@ -304,13 +272,12 @@ class Funcoes:
         menu_ajuda.addAction("Verificar atualização", lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view))
         menu_ajuda.addAction("Notas da versão", lambda: self.view.controles['lbl_multi_andamento'].setText(abrir_notas_versao()) )
         menu_ajuda.addAction("Sobre", lambda: self.visitar_site())
-        """
+
         # --- Controle da Janela Principal ---
-        #self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
-        criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
-                                  espacox=config.ESPACOX, espacoy=config.ESPACOY)
 
         # --- Controle da janela ---
+        self.view.controles['btn_executar'].clicked.connect(lambda: copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].currentText()))
+        """
         self.view.controles['btn_executar'].configure(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['opt_selecao'].get()))
         self.view.controles['btn_pausar'].configure(command=lambda: copiar_arquivos.pausar_copia())
         self.view.controles['btn_encerrar'].configure(command=lambda: copiar_arquivos.cancelar_copia())

@@ -55,7 +55,7 @@ def iniciar_calculo_tamanho(view, pastas_origem, liberar):
 def tamanho_pasta(view, pastas_origem, liberar):
     global tamanho_total, liberar_total
     lbl_tamanho_exibir = view.controles['lbl_tamanho_exibir']
-    lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].configure(text="Atualizando..."))
+    view.controles['lbl_tamanho_exibir'].setText("Atualizando...")
     tamanho_total = 0
     for pasta in pastas_origem:
         ver_pasta = Path(pasta)
@@ -65,7 +65,7 @@ def tamanho_pasta(view, pastas_origem, liberar):
             if item.is_file():
                 tamanho_total += item.stat(follow_symlinks=False).st_size
 
-    lbl_tamanho_exibir.after(0, lambda: view.controles['lbl_tamanho_exibir'].configure(text=formatar_tamanho(tamanho_total)))
+    view.controles['lbl_tamanho_exibir'].setText(formatar_tamanho(tamanho_total))
 
     match liberar:
         case "execucao":
@@ -91,13 +91,13 @@ def iniciar_copiar_arquivos(view, nome_tarefa):
     global contador, soma
     contador = 1
     soma = 0
-    view.controles['opt_selecao'].configure(state="disabled")
-    view.controles['btn_executar'].configure(state="disabled")
-    view.controles['btn_pausar'].configure(state="normal")
+    view.controles['cmb_selecao'].setEnabled(False)
+    view.controles['btn_executar'].setEnabled(False)
+    view.controles['btn_pausar'].setEnabled(True)
     carregar_dados = dados_tinydb.carregar_dados_tarefa()
     pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
     pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
-    view.controles['lbl_multi_execucao'].configure(text=f"Executando...\n{nome_tarefa}")
+    view.controles['lbl_multi_execucao'].setText(f"Executando...\n{nome_tarefa}")
 
     iniciar_calculo_tamanho(view, pastas_origem, "execucao")
     iniciar_copia(pastas_origem, pastas_destino, view)
@@ -122,15 +122,12 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
         pasta_destino_final = Path(destino_base) / caminho_origem.name
 
         # Atualização segura do Tkinter vindo de Thread
-        lbl_andamento.after(
-            0,
-            lambda idx=i: lbl_andamento.configure(text=f"Iniciando cópia...{idx}")
-        )
+        lbl_andamento.setText(f"Iniciando cópia...{i}")
 
         copiando_arquivos(str(caminho_origem), str(pasta_destino_final), view)
 
     # Atualiza a interface ao finalizar todas as cópias
-    view.controles['opt_selecao'].configure(state="normal")
+    view.controles['cmb_selecao'].configure(state="normal")
     view.controles['btn_executar'].configure(state="normal")
     view.controles['btn_pausar'].configure(state="disabled")
     lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].configure(text="Concluído cópia!"))
