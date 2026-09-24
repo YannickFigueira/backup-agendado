@@ -1,9 +1,9 @@
 import platform
 from PyQt6.QtWidgets import (
     QDialog, QWidget, QFrame, QLabel, QComboBox, QLineEdit,
-    QPushButton, QCheckBox, QTimeEdit, QGridLayout, QHBoxLayout, QVBoxLayout
+    QPushButton, QCheckBox, QSpinBox, QGridLayout, QHBoxLayout, QVBoxLayout, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QTime
+from PyQt6.QtCore import Qt
 
 import config
 import tema
@@ -66,7 +66,7 @@ class JanelaConfiguracao(QDialog):
         # =========================================================================
         self.frame_campos = QFrame()
         grid_campos = QGridLayout(self.frame_campos)
-        grid_campos.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
+        grid_campos.setContentsMargins(0, 0, 0, 0)
         grid_campos.setSpacing(config.ESPACO)
 
         # Selecionar
@@ -75,7 +75,8 @@ class JanelaConfiguracao(QDialog):
 
         self.cmb_selecao = QComboBox()
         grid_campos.addWidget(self.cmb_selecao, 0, 1)
-        self.controles['opt_selecao'] = self.cmb_selecao
+        self.controles['cmb_selecao'] = self.cmb_selecao
+        self.controles['cmb_selecao'] = self.cmb_selecao  # Atalho direto para o controle
 
         # Tarefa
         self.lbl_tarefa = QLabel("Tarefa:")
@@ -85,7 +86,7 @@ class JanelaConfiguracao(QDialog):
         grid_campos.addWidget(self.txt_tarefa, 1, 1)
         self.controles['txt_tarefa'] = self.txt_tarefa
 
-        # Seletor de Horário (Sub-frame)
+        # Seletor de Horário (Sub-frame com 2 SpinBoxes em linha)
         self.frame_hora = QFrame()
         layout_hora = QVBoxLayout(self.frame_hora)
         layout_hora.setContentsMargins(0, 0, 0, 0)
@@ -95,17 +96,37 @@ class JanelaConfiguracao(QDialog):
         self.lbl_horario.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_hora.addWidget(self.lbl_horario)
 
-        # QTimeEdit configurado para formato HH:mm com passo de 5 min
-        self.time_edit = QTimeEdit()
-        self.time_edit.setDisplayFormat("HH:mm")
-        self.time_edit.setTime(QTime(17, 0))
-        layout_hora.addWidget(self.time_edit)
+        # Container horizontal para Hora : Minuto
+        box_time = QHBoxLayout()
+        box_time.setContentsMargins(0, 0, 0, 0)
+        box_time.setSpacing(4)
+
+        self.spin_hora = QSpinBox()
+        self.spin_hora.setRange(0, 23)
+        self.spin_hora.setValue(17)
+        self.spin_hora.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.spin_hora.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.lbl_dois_pontos = QLabel(":")
+        self.lbl_dois_pontos.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.spin_min = QSpinBox()
+        self.spin_min.setRange(0, 59)
+        self.spin_min.setValue(0)
+        self.spin_min.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.spin_min.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        box_time.addWidget(self.spin_hora)
+        box_time.addWidget(self.lbl_dois_pontos)
+        box_time.addWidget(self.spin_min)
+
+        layout_hora.addLayout(box_time)
 
         # Adiciona o agrupador de horário estendendo pelas 2 linhas do Grid
         grid_campos.addWidget(self.frame_hora, 0, 2, 2, 1, Qt.AlignmentFlag.AlignCenter)
 
-        self.controles['spin_hora'] = self.time_edit
-        self.controles['spin_min'] = self.time_edit
+        self.controles['spin_hora'] = self.spin_hora
+        self.controles['spin_min'] = self.spin_min
 
         layout_conteudo.addWidget(self.frame_campos)
 
@@ -114,7 +135,7 @@ class JanelaConfiguracao(QDialog):
         # =========================================================================
         self.frame_checkbox = QFrame()
         grid_check = QGridLayout(self.frame_checkbox)
-        grid_check.setContentsMargins(config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO)
+        grid_check.setContentsMargins(0, 0, 0, 0)
         grid_check.setSpacing(config.ESPACO)
 
         # Linha 0: Desabilitar / Desligar
@@ -174,6 +195,12 @@ class JanelaConfiguracao(QDialog):
         # Botão Gravar Tarefa (Ocupa as 5 linhas ao lado dos checkboxes)
         self.btn_gravar = QPushButton("Gravar Tarefa")
         self.btn_gravar.setObjectName("BtnAcao")
+
+        # Permite que o botão expanda na vertical sem limite
+        self.btn_gravar.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Expanding
+        )
         grid_check.addWidget(self.btn_gravar, 0, 2, 5, 1)
         self.controles['btn_gravar'] = self.btn_gravar
 
