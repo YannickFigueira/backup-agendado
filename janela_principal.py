@@ -1,7 +1,7 @@
 import platform
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QFrame, QLabel, QComboBox,
-    QPushButton, QProgressBar, QGridLayout, QHBoxLayout, QVBoxLayout
+    QPushButton, QProgressBar, QGridLayout, QHBoxLayout, QVBoxLayout, QApplication
 )
 from PyQt6.QtCore import Qt
 
@@ -55,6 +55,18 @@ class JanelaPrincipal(QMainWindow):
 
         # Trava o tamanho da janela de acordo com o tamanho ideal dos componentes
         self.setFixedSize(self.sizeHint())
+
+        # Centraliza a janela na tela
+        self._centralizar_janela()
+
+    def _centralizar_janela(self):
+        """Centraliza a janela no monitor ativo."""
+        screen = QApplication.primaryScreen()
+        if screen:
+            geometria_tela = screen.availableGeometry()
+            geometria_janela = self.frameGeometry()
+            geometria_janela.moveCenter(geometria_tela.center())
+            self.move(geometria_janela.topLeft())
 
     def _criar_barra_menu(self):
         self.menu_arquivo = self.barra_titulo.adicionar_submenu("Arquivo")
