@@ -99,6 +99,27 @@ def criar_separador_com_texto(janela_container, texto, linha, espacox, espacoy):
     sep_direita.grid(row=0, column=2, sticky="ew", padx=(10, 0))
 
 ## Notas da versão
+def abrir_notas_versao():
+    """
+    :return:
+    """
+    caminho_arquivo = "CHANGELOG.md"
+    if platform.system() == "Windows":
+        caminho_arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
+    elif platform.system() == "Linux":
+        caminho_arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
+    else:
+        print("Sistema não suportado")
+
+    try:
+        with open(caminho_arquivo, encoding="utf-8") as f:
+            conteudo = f.read()
+
+        return conteudo
+
+    except FileNotFoundError:
+        return "Arquivo changelog.md não encontrado."
+
 def extrair_ultima_versao_changelog():
     """
     :return:
@@ -277,15 +298,8 @@ class Funcoes:
 
         menu_ajuda = self.view.controles['menu_ajuda']
         menu_ajuda.addAction("Verificar atualização", lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view))
+        menu_ajuda.addAction("Notas da versão", lambda: self.view.controles['lbl_multi_andamento'].setText(abrir_notas_versao()) )
         """
-        
-
-        # -- Menu Ajuda --
-        self.menu_ajuda = self.view.controles['menu_btn'].adicionar_submenu("Ajuda")
-        self.menu_ajuda.add_command(label="Verificar atualização",
-                                    command=lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view.controles['janela_principal']))
-        self.menu_ajuda.add_command(label="Notas da versão",
-              command=lambda: self.view.controles['lbl_multi_andamento'].configure  (text=extrair_ultima_versao_changelog()))
         self.menu_ajuda.add_command(label="Sobre", command=lambda: self.visitar_site())
 
         # --- Controle da Janela Principal ---

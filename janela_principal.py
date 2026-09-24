@@ -147,7 +147,7 @@ class JanelaPrincipal(QMainWindow):
 
         # Moldura de execução (Com Borda Visível)
         self.moldura_execucao_borda = QFrame()
-        self.moldura_execucao_borda.setFixedHeight(110)
+        self.moldura_execucao_borda.setFixedHeight(160)
         self.moldura_execucao_borda.setObjectName("MolduraLog")
         self.moldura_execucao_borda.setFrameShape(QFrame.Shape.StyledPanel)
         self.moldura_execucao_borda.setFrameShadow(QFrame.Shadow.Sunken)
