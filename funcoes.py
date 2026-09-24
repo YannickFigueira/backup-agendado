@@ -15,6 +15,10 @@ from time import sleep
 
 from tkinter import filedialog, ttk
 from datetime import datetime
+
+from PyQt6.QtCore import QUrl
+from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtWidgets import QMessageBox
 from screeninfo import get_monitors
 
 import caixa_mensagem
@@ -299,9 +303,8 @@ class Funcoes:
         menu_ajuda = self.view.controles['menu_ajuda']
         menu_ajuda.addAction("Verificar atualização", lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view))
         menu_ajuda.addAction("Notas da versão", lambda: self.view.controles['lbl_multi_andamento'].setText(abrir_notas_versao()) )
+        menu_ajuda.addAction("Sobre", lambda: self.visitar_site())
         """
-        self.menu_ajuda.add_command(label="Sobre", command=lambda: self.visitar_site())
-
         # --- Controle da Janela Principal ---
         #self.view.controles['janela_principal'].protocol("WM_DELETE_WINDOW",lambda: self.esconder_janela())
         criar_separador_com_texto(self.view.controles['frame_controls'], "EM EXECUÇÃO", linha=self.view.controles['linha_painel_esquerdo'],
@@ -1066,15 +1069,31 @@ class Funcoes:
             editando_excluir_dados = True
             self.fechar_janelas("janela_excluir_tarefa")
 
-    def visitar_site(self):
-        """Gera mensagem para visitar a página"""
-        pagina = f"https://github.com/YannickFigueira"
-        resposta = caixa_mensagem.sim_nao("Sobre", f"{config.NOME_PROGRAMA} {config.VERSION}\n"
-                                                   f"Desenvolvedor YannickFigueira\n"
-                                                   f"chronostimeinchain@gmail.com\n"
-                                                   f"Deseja visitar a página", self.view.controles['janela_principal'])
-        if resposta == "Sim":
-            verificarversao.webbrowser.open(pagina)
+    def visitar_site(self=None):
+        pagina = "https://github.com/YannickFigueira"
+
+        # Instancia a caixa de mensagem do PyQt6
+        msg_box = QMessageBox(self.view)
+        msg_box.setWindowTitle("Sobre")
+        msg_box.setText(
+            f"<b>{config.NOME_PROGRAMA} {config.VERSION}</b><br>"
+            f"Desenvolvedor: YannickFigueira<br>"
+            f"chronostimeinchain@gmail.com<br><br>"
+            f"Deseja visitar a página?"
+        )
+        msg_box.setIcon(QMessageBox.Icon.Information)
+
+        # Configura os botões em português
+        btn_sim = msg_box.addButton("Sim", QMessageBox.ButtonRole.YesRole)
+        btn_nao = msg_box.addButton("Não", QMessageBox.ButtonRole.NoRole)
+
+        msg_box.setDefaultButton(btn_sim)
+        msg_box.exec()
+
+        # Verifica qual botão foi clicado
+        if msg_box.clickedButton() == btn_sim:
+            # Abre a URL (usando QDesktopServices ou webbrowser.open)
+            QDesktopServices.openUrl(QUrl(pagina))
 
     # --- Menu e título ---
     def _iniciar_arraste(self, event):
