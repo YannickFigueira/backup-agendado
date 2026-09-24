@@ -267,27 +267,18 @@ class Funcoes:
 
         self.criar_bandeja()
 
-        # Passa apenas +X+Y (ou -X-Y para borda direita/inferior)
-        #self.view.geometry(f"+{pos_x}+{pos_y}")
-
-        # --- Controle do Título ---
-        # Permite arrastar a janela clicando no seu frame_titulo customizado
-        #self.view.controles['frame_titulo'].bind("<Button-1>", self._iniciar_arraste)
-        #self.view.controles['frame_titulo'].bind("<B1-Motion>", lambda e: self._arrastar_janela(e, "janela_principal"))
-        #self.view.controles['btn_minimizar'].configure(command=lambda: self.view.controles['janela_principal'].withdraw())
-        #self.view.controles['btn_fechar'].configure(command=lambda: self.esconder_janela())
-
         # --- Controle do Menu ---
         # --- Menu Arquivo ---
         menu_arquivo = self.view.controles['menu_arquivo']
         menu_arquivo.addAction("Configurações", lambda: self.abrir_janela_configuracoes(nome_tarefa))
         menu_arquivo.addAction("Logs", lambda: self.abrir_janela_logs_backup())
-        """
-        self.menu_arquivo.add_command(label="Logs",
-                                                        command=lambda: self.abrir_janela_logs_backup())
         # Mudar comado para withdraw
-        self.menu_arquivo.add_command(label="Sair",
-                                                        command=lambda: self.fechar_programa()) # Mudar para withdraw
+        menu_arquivo.addAction("Sair", lambda: self.view.close())
+
+        menu_ajuda = self.view.controles['menu_ajuda']
+        menu_ajuda.addAction("Verificar atualização", lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view))
+        """
+        
 
         # -- Menu Ajuda --
         self.menu_ajuda = self.view.controles['menu_btn'].adicionar_submenu("Ajuda")
