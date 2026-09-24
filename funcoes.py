@@ -22,7 +22,7 @@ import verificarversao, dados_tinydb, copiar_arquivos, config
 from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
-from janela_logs_backup import JanelaLogsBackup
+from janela_logs import JanelaLogs
 from janela_nova_tarefa import JanelaNovaTarefa
 from janela_excluir_tarefa import JanelaExcluirTarefa
 
@@ -245,8 +245,8 @@ class Funcoes:
                 self._vincular_janela_principal()
             elif view.nome_janela == "configuracao":
                 self._vincular_configuracoes()
-            elif view.nome_janela == "log-backup":
-                self._vincular_logs_backup()
+            elif view.nome_janela == "logs":
+                self._vincular_janela_logs()
             elif view.nome_janela == "nova-tarefa":
                 self._vincular_nova_tarefa()
             elif view.nome_janela == "alterar-pastas":
@@ -279,11 +279,10 @@ class Funcoes:
 
         # --- Controle do Menu ---
         # --- Menu Arquivo ---
-        self.menu_arquivo = self.view.controles['menu_arquivo'].addAction("Configurações", lambda: self.abrir_janela_configuracoes(nome_tarefa))
+        menu_arquivo = self.view.controles['menu_arquivo']
+        menu_arquivo.addAction("Configurações", lambda: self.abrir_janela_configuracoes(nome_tarefa))
+        menu_arquivo.addAction("Logs", lambda: self.abrir_janela_logs_backup())
         """
-        self.menu_arquivo = self.view.controles['menu_btn'].adicionar_submenu("Arquivo")
-        self.menu_arquivo.add_command(label="Configurações",
-                                      command=lambda: self.abrir_janela_configuracoes(nome_tarefa))
         self.menu_arquivo.add_command(label="Logs",
                                                         command=lambda: self.abrir_janela_logs_backup())
         # Mudar comado para withdraw
@@ -361,14 +360,14 @@ class Funcoes:
         self.view.controles['btn_excluir'].config(command=lambda: self.excluir_tarefa())
 
     # --- LÓGICA DA JANELA DE LOGS ---
-    def _vincular_logs_backup(self):
+    def _vincular_janela_logs(self):
         # --- Inicialização da janela logs ---
         arquivos_log = ler_pasta_log()
         texto_log = "\n".join([f"{item}" for item in arquivos_log])
+        log_mensagem("Reativar logs")
+        return
 
         # --- Controles da janela de logs
-        self.view.controles['janela_logs_backup'].protocol("WM_DELETE_WINDOW",
-                                                              lambda: self.fechar_janelas('janela_logs_backup'))
 
         self.view.controles['lbl_logs'].config(text=texto_log)
         self.view.controles['cmb_selecao'].config(values=arquivos_log)
@@ -506,13 +505,12 @@ class Funcoes:
             print("Arquivos logs backup")
             print(len(arquivos_log))
             # 1. Cria a parte visual
-            visual = JanelaLogsBackup(self.view.controles['janela_principal'])
+            visual = JanelaLogs(self.view.controles['janela_principal'])
 
             # 2. Cria a lógica e passa a visão para ela controlar
             logica = Funcoes(visual)
-            logica.centralizar_janela("janela_logs_backup", self.view.controles['janela_principal'])
-
-            logica.view.controles['janela_logs_backup'].wait_window()
+            #logica.centralizar_janela("janela_logs_backup", self.view.controles['janela_principal'])
+            visual.exec()
         else:
             caixa_mensagem.info("Aviso", "Nenhum log foi gerado ainda", self.view.controles['janela_logs_backup'])
 
