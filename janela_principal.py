@@ -212,7 +212,6 @@ class JanelaPrincipal(QMainWindow):
         # Barra de Progresso
         self.progress_bar = QProgressBar()
         self.progress_bar.setFixedSize(500, 26)
-        self.progress_bar.setRange(0, 10000)
         self.progress_bar.setValue(0)
         self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.progress_bar.setFormat("0.000%")

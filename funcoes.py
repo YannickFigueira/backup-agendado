@@ -219,9 +219,10 @@ class Funcoes:
         # --- Controle da Janela Principal ---
 
         # --- Controle da janela ---
-        self.view.controles['btn_executar'].clicked.connect(lambda: copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].currentText()))
-        self.view.controles['btn_pausar'].clicked.connect(lambda: copiar_arquivos.pausar_copia())
-        self.view.controles['btn_encerrar'].clicked.connect(lambda: copiar_arquivos.cancelar_copia())
+        self.view.controles['btn_executar'].clicked.connect(lambda: self.executar_backup_interface(self.view.controles['cmb_selecao'].currentText()))
+        # Pausar: chama a pausa direto na instância ativa da WorkerCopia
+        self.view.controles['btn_pausar'].clicked.connect(lambda: self.worker.solicitar_pausa() if hasattr(self, 'worker') and self.worker.isRunning() else None)
+        self.view.controles['btn_encerrar'].clicked.connect(lambda: self.cancelar_backup_interface())
         self.view.controles['cmb_selecao'].currentTextChanged.connect(lambda _: self.atualizar_informacoes(self.view.controles['cmb_selecao'].currentText()))
 
         if nome_tarefa == "inicial":
@@ -231,6 +232,7 @@ class Funcoes:
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
         # --- Inicialização ---
+        self.view.controles['cmb_selecao'].clear()
         self.carregar_cmb_selecao()
         self.atualizar_configuracao()
 
@@ -314,19 +316,20 @@ class Funcoes:
             editando_novos_dados = False
             logica.atualizar_configuracao()
         """
-        #logica.view.controles['janela_configuracao'].wait_window()
+        visual.exec()
+
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
+        self.view.controles['cmb_selecao'].clear()
         nome_tarefa = self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
-            caixa_mensagem.info("Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!", self.view.controles['janela_configuracao'])
+            caixa_mensagem.info("Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!",
+                                self.view.controles['janela_configuracao'])
             self.fechar_programa()
         else:
             configuracao_aberta = False
-            nome_tarefa = self.carregar_cmb_selecao()
             hora = carregar_dados['tarefas'][nome_tarefa]['hora']
             minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
             self.view.controles['lbl_hora_execucao'].setText(f"{hora}:{minuto}")
-        visual.exec()
 
     def abrir_janela_nova_tarefa(self):
         global pasta_origem, pasta_destino, nova_tarefa_aberta
@@ -482,6 +485,7 @@ class Funcoes:
         self.view.controles[f'{janela}'].destroy()
 
     def carregar_cmb_selecao(self):
+        print("Carregar cmb_selecao")
         lista_nomes = list(carregar_dados['tarefas'].keys())
         cmb_selecao = self.view.controles['cmb_selecao']
         cmb_selecao.addItems(lista_nomes)
@@ -659,10 +663,11 @@ class Funcoes:
 
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):
-        pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
-        self.atualizar_horario(nome_tarefa)
-        if nome_tarefa != "inicial":
-            copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
+        if nome_tarefa != '':
+            pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
+            self.atualizar_horario(nome_tarefa)
+            if nome_tarefa != "inicial":
+                copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
 
     def atualizar_horario(self, nome_tarefa):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
@@ -1011,3 +1016,58 @@ class Funcoes:
         x = self.view.controles[janela].winfo_pointerx() - self._x
         y = self.view.controles[janela].winfo_pointery() - self._y
         self.view.controles[janela].geometry(f"+{x}+{y}")
+
+    def executar_backup_interface(self, nome_tarefa):
+        # Instancia a WorkerCopia
+        self.worker = copiar_arquivos.WorkerCopia(nome_tarefa=nome_tarefa)
+
+        # Conecta os sinais da thread aos componentes visuais
+        self.worker.sinal_andamento.connect(self.view.controles['lbl_multi_andamento'].setText)
+        self.worker.sinal_execucao.connect(self.view.controles['lbl_multi_execucao'].setText)
+        self.worker.sinal_tamanho_copiado.connect(self.view.controles['lbl_copiado_tamanho'].setText)
+        self.worker.sinal_tamanho_total.connect(self.view.controles['lbl_tamanho_exibir'].setText)
+
+        # Atualiza a barra de progresso
+        def atualizar_barra(pct_int, pct_float):
+            pbar = self.view.controles['progress_bar']
+            pbar.setFormat(f"{pct_float:.3f}%")
+            pbar.setValue(pct_int)
+
+        self.worker.sinal_progresso.connect(atualizar_barra)
+
+        # 3. ZERA A INTERFACE ANTES DE INICIAR
+        #self.zerar_barra_progresso()
+
+        # Gerencia habilitar/desabilitar botões
+        def alternar_botoes(cmb_enabled, pausar_enabled, finalizado):
+            self.view.controles['cmb_selecao'].setEnabled(cmb_enabled)
+            self.view.controles['btn_executar'].setEnabled(cmb_enabled)
+            self.view.controles['btn_pausar'].setEnabled(pausar_enabled)
+
+        self.worker.sinal_estado_botoes.connect(alternar_botoes)
+
+        # Caixas de mensagem
+        self.worker.sinal_alerta.connect(
+            lambda tit, msg: QMessageBox.information(self.view, tit, msg)
+        )
+
+        # Inicia a thread
+        self.worker.start()
+
+    def cancelar_backup_interface(self):
+        if hasattr(self, 'worker') and self.worker.isRunning():
+            resposta = QMessageBox.question(
+                self.view,
+                "Cancelar",
+                "Quer realmente cancelar?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if resposta == QMessageBox.StandardButton.Yes:
+                self.worker.solicitar_cancelamento()
+
+    def zerar_barra_progresso(self):
+        pbar = self.view.controles['progress_bar']
+        pbar.setValue(0)
+        pbar.setFormat("0.000%")
+        self.view.controles['label_copiado_contagem'].setText("0.00 B")

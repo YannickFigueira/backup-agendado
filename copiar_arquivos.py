@@ -1,80 +1,21 @@
 import os
+import platform
 import shutil
-import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import platform
 
-import caixa_mensagem
+from PyQt6.QtCore import QThread, pyqtSignal
+
 import dados_tinydb
 from arquivo_log import gerar_arquivo_log, registrar_log
 from config import log_files
 
-# Aumenta o buffer interno do Windows no shutil para 16MB (o padrão é 64KB)
-# Isso reduz as chamadas de sistema e evita que o cache esvazie, mitigando as pausas.
+# Aumenta o buffer interno do Windows no shutil para 16MB
 shutil._WINDOWS_INTERNAL_BUFFER_SIZE = 16 * 1024 * 1024
+SYSTEM_OS = platform.system()
 
-# Variável
-sistema = platform.system()
-tarefas_executando = []
-cancelar = False
-pausar = False
-liberar_total = False
-tamanho_total = 0
-contador = 1
-soma = 0
-
-def pausar_copia():
-    global pausar
-    pausar = True
-
-def cancelar_copia():
-    resposta = caixa_mensagem.sim_nao("Cancelar", "Quer realmente cancelar?")
-    if resposta == "Sim":
-        global cancelar
-        cancelar = True
-
-### Atualiza a barra de progresso ###
-def atualizar_barra(view, valor, total):
-    porcentagem = (valor / total)
-    view.controles['progress_bar'].set(porcentagem)
-    #self.view.controles['lbl_porcentagem'].configure(text=f"{(porcentagem * 100):.3f}%")
-    # 2. Atualiza o texto do canvas
-    texto_id = view.controles['lbl_porcentagem']
-    view.controles['progress_bar']._canvas.itemconfig(texto_id, text=f"{(porcentagem * 100):.3f}%")
-
-# --- Inicio do procedimento
-def iniciar_calculo_tamanho(view, pastas_origem, liberar):
-    t = threading.Thread(
-        target=tamanho_pasta,
-        args=(view, pastas_origem, liberar),
-        daemon=True
-    )
-    t.start()
-
-def tamanho_pasta(view, pastas_origem, liberar):
-    global tamanho_total, liberar_total
-    lbl_tamanho_exibir = view.controles['lbl_tamanho_exibir']
-    view.controles['lbl_tamanho_exibir'].setText("Atualizando...")
-    tamanho_total = 0
-    for pasta in pastas_origem:
-        ver_pasta = Path(pasta)
-
-        # Iteramos pelos arquivos para contar e somar o tamanho simultaneamente
-        for item in ver_pasta.rglob("*"):
-            if item.is_file():
-                tamanho_total += item.stat(follow_symlinks=False).st_size
-
-    view.controles['lbl_tamanho_exibir'].setText(formatar_tamanho(tamanho_total))
-
-    match liberar:
-        case "execucao":
-            liberar_total = True
-        case _:
-            return
 
 def formatar_tamanho(tamanho):
-    # Converte o valor para float com segurança
     try:
         tamanho = float(tamanho)
     except (ValueError, TypeError):
@@ -86,108 +27,108 @@ def formatar_tamanho(tamanho):
         tamanho /= 1024.0
     return f"{tamanho:.2f} PB"
 
-# --- Execução da cópia dos arquivos ---
-def iniciar_copiar_arquivos(view, nome_tarefa):
-    global contador, soma
-    contador = 1
-    soma = 0
-    view.controles['cmb_selecao'].setEnabled(False)
-    view.controles['btn_executar'].setEnabled(False)
-    view.controles['btn_pausar'].setEnabled(True)
-    carregar_dados = dados_tinydb.carregar_dados_tarefa()
-    pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
-    pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
-    view.controles['lbl_multi_execucao'].setText(f"Executando...\n{nome_tarefa}")
 
-    iniciar_calculo_tamanho(view, pastas_origem, "execucao")
-    iniciar_copia(pastas_origem, pastas_destino, view)
+class WorkerCopia(QThread):
+    # --- SINAIS PARA A INTERFACE GRÁFICA ---
+    sinal_progresso = pyqtSignal(int, float)            # (porcentagem_int, porcentagem_float)
+    sinal_andamento = pyqtSignal(str)                   # Texto exibindo o arquivo atual
+    sinal_execucao = pyqtSignal(str)                    # Texto exibindo a tarefa em execução
+    sinal_tamanho_copiado = pyqtSignal(str)             # Texto com tamanho somado
+    sinal_tamanho_total = pyqtSignal(str)               # Texto com tamanho total calculado
+    sinal_estado_botoes = pyqtSignal(bool, bool, bool)  # (cmb/executar_enabled, pausar_enabled, finalizado)
+    sinal_alerta = pyqtSignal(str, str)                 # (Título, Mensagem) para dialogs
+    sinal_concluido = pyqtSignal(bool, bool)            # (teve_erro, foi_cancelado)
 
-def iniciar_copia(pastas_origem, pastas_destino, view):
-    t = threading.Thread(
-        target=copiando_pastas,
-        args=(pastas_origem, pastas_destino, view),
-        daemon=True
-    )
-    t.start()
+    def __init__(self, nome_tarefa=None, pastas_origem=None, pastas_destino=None, modo_automatizado=False):
+        super().__init__()
+        self.nome_tarefa = nome_tarefa
+        self.pastas_origem = pastas_origem
+        self.pastas_destino = pastas_destino
+        self.modo_automatizado = modo_automatizado
 
-def copiando_pastas(pastas_origem, pastas_destino, view):
-    lbl_andamento = view.controles['lbl_multi_andamento']
-    lbl_execucao = view.controles['lbl_multi_execucao']
+        # Controle de fluxo da thread
+        self.cancelar = False
+        self.pausar = False
+        self.tamanho_total = 0
+        self.soma = 0
 
-    # zip alinha origem/destino; enumerate fornece o índice 'i'
-    for i, (origem, destino_base) in enumerate(zip(pastas_origem, pastas_destino)):
-        caminho_origem = Path(origem)
-        # / une caminhos automaticamente independente do S.O.
-        pasta_destino_final = Path(destino_base) / caminho_origem.name
+    def solicitar_pausa(self):
+        self.pausar = True
 
-        # Atualização segura do Tkinter vindo de Thread
-        lbl_andamento.setText(f"Iniciando cópia...{i}")
+    def solicitar_cancelamento(self):
+        self.cancelar = True
 
-        copiando_arquivos(str(caminho_origem), str(pasta_destino_final), view)
+    def run(self):
+        """Ponto de entrada executado em segundo plano pela QThread."""
+        if self.modo_automatizado:
+            self._executar_copia_automatizada()
+            return
 
-    # Atualiza a interface ao finalizar todas as cópias
-    view.controles['cmb_selecao'].setEnabled(True)
-    view.controles['btn_executar'].setEnabled(True)
-    view.controles['btn_pausar'].setEnabled(False)
-    lbl_andamento.setText("Concluído cópia!")
-    lbl_execucao.setText("")
+        # Desabilita botões da interface via sinal
+        self.sinal_estado_botoes.emit(False, True, False)
+        self.sinal_execucao.emit(f"Executando...\n{self.nome_tarefa}")
 
-def copiando_arquivos(origem, destino, view):
-    caminho_log = gerar_arquivo_log(log_files)
-    global cancelar, pausar, tamanho_total, soma
-    lbl_andamento = view.controles['lbl_multi_andamento']
-    lbl_copiado_tamanho = view.controles['lbl_copiado_tamanho']
+        # Carrega tarefas do banco caso não tenham sido passadas manualmente
+        if not self.pastas_origem or not self.pastas_destino:
+            carregar_dados = dados_tinydb.carregar_dados_tarefa()
+            self.pastas_origem = carregar_dados['tarefas'][self.nome_tarefa]['pastas_origem']
+            self.pastas_destino = carregar_dados['tarefas'][self.nome_tarefa]['pastas_destino']
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
-            if pausar:
-                caixa_mensagem.info("Pausa", "Tarefa pausada")
-                pausar = False
+        # 1. Calcula o tamanho total antes de iniciar a cópia
+        self._calcular_tamanho_total()
 
-            if cancelar:
-                print("Tarefa encerrada")
+        # 2. Executa o fluxo principal de cópia
+        self._copiando_pastas()
+
+        # Reabilita botões da interface ao finalizar
+        self.sinal_estado_botoes.emit(True, False, True)
+        self.sinal_andamento.emit("Concluído cópia!")
+        self.sinal_execucao.emit("")
+        self.sinal_concluido.emit(False, self.cancelar)
+
+    def _calcular_tamanho_total(self):
+        """Calcula o tamanho total dos arquivos para a barra de progresso."""
+        self.sinal_tamanho_total.emit("Atualizando...")
+        self.tamanho_total = 0
+
+        for pasta in self.pastas_origem:
+            ver_pasta = Path(pasta)
+            if ver_pasta.exists():
+                for item in ver_pasta.rglob("*"):
+                    if self.cancelar:
+                        return
+                    if item.is_file():
+                        try:
+                            self.tamanho_total += item.stat(follow_symlinks=False).st_size
+                        except Exception:
+                            pass
+
+        self.sinal_tamanho_total.emit(formatar_tamanho(self.tamanho_total))
+
+    def _copiando_pastas(self):
+        """Itera sobre os pares de origem/destino e gerencia a cópia."""
+        for i, (origem, destino_base) in enumerate(zip(self.pastas_origem, self.pastas_destino)):
+            if self.cancelar:
                 return
 
-            destino_final = destino / Path(raiz).relative_to(origem)
-            try:
-                if Path(raiz).is_dir():
-                    destino_final.mkdir(parents=True, exist_ok=True)
-
-                for f in files:
-                    origem_arquivo = Path(raiz) / f
-                    try:
-                        # follow_symlinks=False evita tentar resolver atalhos/symlinks quebrados
-                        soma += origem_arquivo.stat(follow_symlinks=False).st_size
-                        destino_arquivo = destino / Path(raiz).relative_to(origem) / f
-                        view.controles['lbl_multi_andamento'].setText(f"{formatar_tamanho(origem_arquivo.stat().st_size)} -> {origem_arquivo}")
-                        view.controles['lbl_copiado_tamanho'].setText(formatar_tamanho(soma))
-
-                        executor.submit(copiar, origem_arquivo, destino_arquivo, caminho_log)
-                    except Exception as e:
-                        erro_encontrado = True
-                        registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> {origem_arquivo}")
-
-                    if liberar_total:
-                        atualizar_barra(view, soma, tamanho_total)
-            except Exception as e:
-                registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
-
-# --- Procedimento de cópia automatizada ---
-def inicar_copia_automatizada(pastas_origem, pastas_destino):
-    caminho_log = gerar_arquivo_log(log_files)
-    registrar_log(caminho_log, "Iniciando processo de backup.")
-
-    # Executa a cópia concorrente
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        # zip alinha origem/destino; enumerate fornece o índice 'i'
-        for i, (origem, destino_base) in enumerate(zip(pastas_origem, pastas_destino)):
             caminho_origem = Path(origem)
-            # / une caminhos automaticamente independente do S.O.
-            destino = Path(destino_base) / caminho_origem.name
+            pasta_destino_final = Path(destino_base) / caminho_origem.name
 
-            registrar_log(caminho_log, f"Copiando pasta {origem}")
+            self.sinal_andamento.emit(f"Iniciando cópia... {i + 1}")
+            self._copiando_arquivos(str(caminho_origem), pasta_destino_final)
 
+    def _copiando_arquivos(self, origem, destino):
+        caminho_log = gerar_arquivo_log(log_files)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
             for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
+                if self.pausar:
+                    self.sinal_alerta.emit("Pausa", "Tarefa pausada")
+                    self.pausar = False
+
+                if self.cancelar:
+                    return
+
                 destino_final = destino / Path(raiz).relative_to(origem)
                 try:
                     if Path(raiz).is_dir():
@@ -195,39 +136,103 @@ def inicar_copia_automatizada(pastas_origem, pastas_destino):
 
                     for f in files:
                         origem_arquivo = Path(raiz) / f
-                        destino_arquivo = destino / Path(raiz).relative_to(origem) / f
-
                         try:
-                            executor.submit(copiar, origem_arquivo, destino_arquivo, caminho_log)
+                            tamanho_arq = origem_arquivo.stat(follow_symlinks=False).st_size
+                            self.soma += tamanho_arq
+                            destino_arquivo = destino / Path(raiz).relative_to(origem) / f
+
+                            # Emite os sinais de atualização para a GUI
+                            self.sinal_andamento.emit(f"{formatar_tamanho(tamanho_arq)} -> {origem_arquivo}")
+                            self.sinal_tamanho_copiado.emit(formatar_tamanho(self.soma))
+
+                            if self.tamanho_total > 0:
+                                pct_float = (self.soma / self.tamanho_total) * 100
+                                self.sinal_progresso.emit(int(pct_float), pct_float)
+
+                            executor.submit(self._copiar_arquivo, origem_arquivo, destino_arquivo, caminho_log)
                         except Exception as e:
-                            registrar_log(caminho_log, f"[ERRO] ao copiar: {e} {origem_arquivo}")
+                            registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> {origem_arquivo}")
+
                 except Exception as e:
                     registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
 
+    def _executar_copia_automatizada(self):
+        """Fluxo sem atualização pesada de interface para rotinas em segundo plano."""
+        caminho_log = gerar_arquivo_log(log_files)
+        registrar_log(caminho_log, "Iniciando processo de backup automatizado.")
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            for i, (origem, destino_base) in enumerate(zip(self.pastas_origem, self.pastas_destino)):
+                caminho_origem = Path(origem)
+                destino = Path(destino_base) / caminho_origem.name
+
+                registrar_log(caminho_log, f"Copiando pasta {origem}")
+
+                for raiz, dirs, files in os.walk(origem, onerror=lambda a: None):
+                    destino_final = destino / Path(raiz).relative_to(origem)
+                    try:
+                        if Path(raiz).is_dir():
+                            destino_final.mkdir(parents=True, exist_ok=True)
+
+                        for f in files:
+                            origem_arquivo = Path(raiz) / f
+                            destino_arquivo = destino / Path(raiz).relative_to(origem) / f
+                            try:
+                                executor.submit(self._copiar_arquivo, origem_arquivo, destino_arquivo, caminho_log)
+                            except Exception as e:
+                                registrar_log(caminho_log, f"[ERRO] ao copiar: {e} {origem_arquivo}")
+                    except Exception as e:
+                        registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
+
         registrar_log(caminho_log, "Processo finalizado.\n" + ("_" * 40))
+        self.sinal_concluido.emit(False, False)
 
-def copiar(origem_arquivo, destino_arquivo, caminho_log):
+    def _copiar_arquivo(self, origem_arquivo, destino_arquivo, caminho_log):
+        """Realiza a cópia física do arquivo tratando o limite de caminhos do Windows."""
+        try:
+            if SYSTEM_OS == 'Windows':
+                str_origem = f"\\\\?\\{origem_arquivo.resolve()}"
+                str_destino = f"\\\\?\\{destino_arquivo.resolve()}"
+            else:
+                str_origem = origem_arquivo
+                str_destino = destino_arquivo
 
-    try:
-        # --- ADICIONE ESTAS LINHAS PARA TRATAR O ERRO 206 ---
-        if sistema == 'Windows':
-            # Resolve o caminho absoluto e aplica o prefixo UNICODE para caminhos longos
-            str_origem = f"\\\\?\\{origem_arquivo.resolve()}"
-            str_destino = f"\\\\?\\{destino_arquivo.resolve()}"
-        else:
-            str_origem = origem_arquivo
-            str_destino = destino_arquivo
-        # ----------------------------------------------------
+            path_destino = Path(str_destino)
+            path_origem = Path(str_origem)
 
-        # Atualize as verificações e o shutil.copy2 usando as strings formatadas
-        path_destino = Path(str_destino)
-        path_origem = Path(str_origem)
+            if not path_destino.is_file() or (path_origem.stat().st_mtime > path_destino.stat().st_mtime):
+                shutil.copy2(str_origem, str_destino, follow_symlinks=False)
+        except shutil.SameFileError:
+            pass
+        except Exception as e:
+            registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> Origem {origem_arquivo} -> Destino {destino_arquivo}")
 
-        if not path_destino.is_file() or (path_origem.stat().st_mtime > path_destino.stat().st_mtime):
-            # shutil.copy2 aceita as strings com o prefixo \\?\
-            shutil.copy2(str_origem, str_destino, follow_symlinks=False)
-    except shutil.SameFileError:
-        pass
-    except Exception as e:
-        erro_encontrado = True
-        registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> Origem {origem_arquivo} -> Destino {destino_arquivo}")
+class WorkerCalculoTamanho(QThread):
+    sinal_tamanho = pyqtSignal(str)
+
+    def __init__(self, pastas_origem):
+        super().__init__()
+        self.pastas_origem = pastas_origem
+
+    def run(self):
+        self.sinal_tamanho.emit("Atualizando...")
+        tamanho_total = 0
+        for pasta in self.pastas_origem:
+            ver_pasta = Path(pasta)
+            if ver_pasta.exists():
+                for item in ver_pasta.rglob("*"):
+                    if item.is_file():
+                        try:
+                            tamanho_total += item.stat(follow_symlinks=False).st_size
+                        except Exception:
+                            pass
+        self.sinal_tamanho.emit(formatar_tamanho(tamanho_total))
+
+def iniciar_calculo_tamanho(view, pastas_origem, liberar=""):
+    """Função compatível para chamar o cálculo de tamanho avulso."""
+    global worker_tamanho_global
+    worker_tamanho_global = WorkerCalculoTamanho(pastas_origem)
+    worker_tamanho_global.sinal_tamanho.connect(
+        view.controles['lbl_tamanho_exibir'].setText
+    )
+    worker_tamanho_global.start()
