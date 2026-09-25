@@ -235,14 +235,12 @@ class Funcoes:
 
         self.carregar_cmb_selecao()
         self.atualizar_configuracao()
-        return
 
         # --- Controles da Janela Configurações ---
-        self.view.controles['btn_fechar'].configure(command=lambda: self.fechar_janelas('janela_configuracao'))
-        #self.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_configuracao())
-        self.view.controles['cmb_selecao'].configure(command=lambda _: self.atualizar_configuracao())
-        self.view.controles['chk_diariamente'].configure(command=lambda: self.atualizar_checkbox())
-        self.view.controles['btn_gravar'].configure(command=lambda: self.gravar_tarefa())
+        self.view.controles['cmb_selecao'].currentTextChanged.connect(lambda _: self.atualizar_configuracao())
+        self.view.controles['chk_diariamente'].stateChanged.connect(lambda: self.atualizar_checkbox())
+        self.view.controles['btn_gravar'].clicked.connect(lambda: self.gravar_tarefa())
+        return
 
         # --- Controle dos Menus ---
         self.view.controles['menu_btn'].adicionar_item("Editar Tarefa",
