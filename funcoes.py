@@ -274,15 +274,14 @@ class Funcoes:
         # --- Inicialização da janela logs ---
         arquivos_log = ler_pasta_log()
         texto_log = "\n".join([f"{item}" for item in arquivos_log])
-        log_mensagem("Reativar logs")
-        return
 
         # --- Controles da janela de logs
 
-        self.view.controles['lbl_logs'].config(text=texto_log)
-        self.view.controles['cmb_selecao'].config(values=arquivos_log)
-        self.view.controles['cmb_selecao'].current(0)
-        self.view.controles['btn_abrir_logs'].config(command=lambda: abrir_logs(self.view))
+        self.view.controles['lbl_logs'].setText(texto_log)
+        self.view.controles['cmb_selecao'].clear()
+        self.view.controles['cmb_selecao'].addItems(arquivos_log)
+        self.view.controles['cmb_selecao'].setCurrentIndex(0)
+        self.view.controles['btn_abrir_logs'].clicked.connect(lambda: abrir_logs(self.view))
 
     # --- Execução das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):

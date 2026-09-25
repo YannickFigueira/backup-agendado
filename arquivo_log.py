@@ -5,7 +5,7 @@ from datetime import datetime
 from config import log_files
 
 def abrir_logs(view):
-    arquivo = view.controles['cmb_selecao'].get()
+    arquivo = view.controles['cmb_selecao'].currentText()
     if platform.system() == "Windows":
         #arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
         subprocess.run(["notepad", log_files / arquivo])

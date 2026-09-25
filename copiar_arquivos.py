@@ -111,7 +111,6 @@ def iniciar_copia(pastas_origem, pastas_destino, view):
     t.start()
 
 def copiando_pastas(pastas_origem, pastas_destino, view):
-    # Pegamos um widget do Tkinter do dicionário para usar o procedimento .after()
     lbl_andamento = view.controles['lbl_multi_andamento']
     lbl_execucao = view.controles['lbl_multi_execucao']
 
@@ -127,11 +126,11 @@ def copiando_pastas(pastas_origem, pastas_destino, view):
         copiando_arquivos(str(caminho_origem), str(pasta_destino_final), view)
 
     # Atualiza a interface ao finalizar todas as cópias
-    view.controles['cmb_selecao'].configure(state="normal")
-    view.controles['btn_executar'].configure(state="normal")
-    view.controles['btn_pausar'].configure(state="disabled")
-    lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].configure(text="Concluído cópia!"))
-    lbl_execucao.after(0, lambda: view.controles['lbl_multi_execucao'].configure(text=""))
+    view.controles['cmb_selecao'].setEnabled(True)
+    view.controles['btn_executar'].setEnabled(True)
+    view.controles['btn_pausar'].setEnabled(False)
+    lbl_andamento.setText("Concluído cópia!")
+    lbl_execucao.setText("")
 
 def copiando_arquivos(origem, destino, view):
     caminho_log = gerar_arquivo_log(log_files)
@@ -160,8 +159,8 @@ def copiando_arquivos(origem, destino, view):
                         # follow_symlinks=False evita tentar resolver atalhos/symlinks quebrados
                         soma += origem_arquivo.stat(follow_symlinks=False).st_size
                         destino_arquivo = destino / Path(raiz).relative_to(origem) / f
-                        lbl_andamento.after(0, lambda: view.controles['lbl_multi_andamento'].configure(text=f"{formatar_tamanho(origem_arquivo.stat().st_size)} -> {origem_arquivo}"))
-                        lbl_copiado_tamanho.after(0, lambda: view.controles['lbl_copiado_tamanho'].configure(text=formatar_tamanho(soma)))
+                        view.controles['lbl_multi_andamento'].setText(f"{formatar_tamanho(origem_arquivo.stat().st_size)} -> {origem_arquivo}")
+                        view.controles['lbl_copiado_tamanho'].setText(formatar_tamanho(soma))
 
                         executor.submit(copiar, origem_arquivo, destino_arquivo, caminho_log)
                     except Exception as e:
