@@ -10,7 +10,6 @@ import sys
 import threading
 import time
 import tkinter as tk
-import customtkinter as ctk
 from time import sleep
 
 from tkinter import filedialog, ttk
@@ -23,7 +22,7 @@ from screeninfo import get_monitors
 
 import caixa_mensagem
 import verificarversao, dados_tinydb, copiar_arquivos, config
-from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log
+from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log, registrar_log
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs import JanelaLogs
@@ -101,10 +100,8 @@ def extrair_ultima_versao_changelog():
     caminho_arquivo = "CHANGELOG.md"
     if platform.system() == "Windows":
         caminho_arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
-        #subprocess.run(["notepad", caminho_arquivo])
     elif platform.system() == "Linux":
         caminho_arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
-        #subprocess.run(["xdg-open", caminho_arquivo])  # ou "gedit"
     else:
         print("Sistema não suportado")
 
@@ -153,54 +150,6 @@ def verificar_tarefas_existentes(valores_atuais):
 
     return f"{nova_tarefa}{proximo_indice}"
 
-def pegar_resolucao():
-    """:return:"""
-    monitors = get_monitors()
-    first = None
-
-    for m in monitors:
-        # 1. Tenta obter o atributo is_primary com segurança
-        is_primary = getattr(m, 'is_primary', False)
-
-        # 2. Se não existir, verifica se a posição é a origem (0, 0)
-        if is_primary or (m.x == 0 and m.y == 0):
-            first = m
-            break
-
-    # Fallback caso nada seja identificado
-    if not first and monitors:
-        first = monitors[0]
-
-    return first
-
-# --- Posição das janelas ---
-largura = 342
-altura = 305
-
-first = pegar_resolucao()
-
-if first is not None:
-    largura_tela = first.width
-    altura_tela = first.height
-else:
-    # Defina um valor padrão de fallback caso não encontre o monitor
-    largura_tela = 1920
-    altura_tela = 1080
-
-# Calcula as posições X e Y para centralizar
-pos_x = int((largura_tela / 2) - largura)
-pos_y = int((altura_tela / 2) - altura)
-
-def registrar_log(caminho_log, mensagem):
-    """Abre o arquivo no modo append ('a') e escreve a mensagem com timestamp."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # 'a' abre o arquivo para escrita sem apagar o conteúdo existente
-    # encoding='utf-8' previne erros de acentuação no arquivo
-    with open(caminho_log, mode="a", encoding="utf-8") as arquivo:
-        arquivo.write(f"[{timestamp}] {mensagem}\n")
-
-
 def obter_caminho_recurso(caminho_relativo: str) -> str:
     """
     Retorna o caminho absoluto para recursos, funcionando em ambiente de
@@ -229,11 +178,6 @@ class Funcoes:
         self.view = view
         self._ultimo_movimento = 0.0
 
-        # Teste dos dados
-        # Exemplo de como você leria isso no seu script de automação:
-        #dados_tinydb.atualizar_campo_tarefa('tarefa6', 'hora', '17')
-        #dados_tinydb.apagar_dados_tarefa('tarefa4')
-
         # O controlador se adapta automaticamente baseando-se em qual janela o chamou
         if hasattr(view, 'nome_janela'):
             if view.nome_janela == "janela-principal":
@@ -248,7 +192,6 @@ class Funcoes:
                 self._vincular_alterar_pastas()
             elif view.nome_janela == "excluir-tarefa":
                 self._vincular_excluir_tarefa()
-
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
     def _vincular_janela_principal(self):
@@ -277,25 +220,22 @@ class Funcoes:
 
         # --- Controle da janela ---
         self.view.controles['btn_executar'].clicked.connect(lambda: copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['cmb_selecao'].currentText()))
-        """
-        self.view.controles['btn_executar'].configure(command=lambda:  copiar_arquivos.iniciar_copiar_arquivos(self.view, self.view.controles['opt_selecao'].get()))
-        self.view.controles['btn_pausar'].configure(command=lambda: copiar_arquivos.pausar_copia())
-        self.view.controles['btn_encerrar'].configure(command=lambda: copiar_arquivos.cancelar_copia())
-        #self.view.controles['opt_selecao'].bind("<<ComboboxSelected>>",lambda _: self.atualizar_informacoes(self.view.controles['opt_selecao'].get()))
-        self.view.controles['opt_selecao'].configure(command=lambda escolha: self.atualizar_informacoes(escolha))
+        self.view.controles['btn_pausar'].clicked.connect(lambda: copiar_arquivos.pausar_copia())
+        self.view.controles['btn_encerrar'].clicked.connect(lambda: copiar_arquivos.cancelar_copia())
+        self.view.controles['cmb_selecao'].currentTextChanged.connect(lambda _: self.atualizar_informacoes(self.view.controles['cmb_selecao'].currentText()))
 
         if nome_tarefa == "inicial":
             caixa_mensagem.info("Aviso", "Insira a primeira tarefa", self.view.controles['janela_principal'])
             self.abrir_janela_configuracoes(nome_tarefa)
-        """
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
         # --- Inicialização ---
         log_mensagem("Reativar")
-        return
+
         self.carregar_cmb_selecao()
         self.atualizar_configuracao()
+        return
 
         # --- Controles da Janela Configurações ---
         self.view.controles['btn_fechar'].configure(command=lambda: self.fechar_janelas('janela_configuracao'))
@@ -402,7 +342,7 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
-        logica.centralizar_janela("janela_nova_tarefa", self.view.controles['janela_configuracao'])
+        #logica.centralizar_janela("janela_nova_tarefa", self.view.controles['janela_configuracao'])
         if len(pasta_origem) > 0:
             pasta_origem = []
             pasta_destino = []
@@ -428,7 +368,7 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
-        logica.centralizar_janela("janela_alterar_pastas", self.view.controles['janela_configuracao'])
+        #logica.centralizar_janela("janela_alterar_pastas", self.view.controles['janela_configuracao'])
 
         # Carregar configuração
         nome_tarefa = self.view.controles['cmb_selecao'].get()
@@ -464,7 +404,7 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
-        logica.centralizar_janela("janela_excluir_tarefa", self.view.controles['janela_configuracao'])
+        #logica.centralizar_janela("janela_excluir_tarefa", self.view.controles['janela_configuracao'])
 
         logica.carregar_cmb_selecao()
         logica.view.controles['janela_excluir_tarefa'].wait_window()
@@ -583,9 +523,6 @@ class Funcoes:
         self.view.controles[controle].delete(0, "end")
         self.view.controles[controle].insert(0, selecionar_pasta())
 
-    def esconder_janela(self):
-        self.view.withdraw()
-
     def restaurar_janela(self):
         # Restaura a janela se ela estiver minimizada ou oculta
         self.view.showNormal()  # Ou self.view.show() se ela estava apenas oculta (.hide())
@@ -593,9 +530,15 @@ class Funcoes:
         self.view.raise_()  # Traz a janela para a frente de outras janelas
 
     def fechar_programa(self, icon=None):
-        resposta = caixa_mensagem.ok_cancel("Alerta",
-    "Fechando o programa o backup não será mais executado até que seja iniciado novamente", master=self.view.controles['janela_principal'])
-        if resposta == "OK":
+        resposta = QMessageBox.question(
+            self.view.controles['janela_principal'],
+            "Alerta",
+            "Fechando o programa o backup não será mais executado até que seja iniciado novamente",
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel  # Botão focado/padrão ao pressionar Enter
+        )
+
+        if resposta == QMessageBox.StandardButton.Ok:
             if sistema == "Linux":
                 # 1. Oculta e destrói os objetos Qt no Linux
                 if hasattr(self, 'qt_tray') and self.qt_tray is not None:
@@ -608,7 +551,6 @@ class Funcoes:
                     self.qt_app = None
 
                 os._exit(0)
-
             else:
                 # Lógica exclusiva para o Windows (pystray + Tkinter)
                 janela_principal = self.view.controles.get('janela_principal')
@@ -678,7 +620,6 @@ class Funcoes:
             #self._processar_eventos_qt()
 
             return self.qt_tray
-
         else:
             # Mantém pystray para Windows
             print('systray')
@@ -727,9 +668,7 @@ class Funcoes:
         pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         self.atualizar_horario(nome_tarefa)
         if nome_tarefa != "inicial":
-            pass
-            log_mensagem("Reativar comando na linha 750")
-            #copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
+            copiar_arquivos.iniciar_calculo_tamanho(self.view, pastas_origem, "")
 
     def atualizar_horario(self, nome_tarefa):
         hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
@@ -755,31 +694,30 @@ class Funcoes:
                 nome_tarefa = self.carregar_cmb_selecao()
                 editando_excluir_dados = False
             else:
-                nome_tarefa = self.view.controles['cmb_selecao'].get()
-            self.view.controles['txt_tarefa'].delete(0, "end")
-            self.view.controles['txt_tarefa'].insert(0, nome_tarefa)
+                nome_tarefa = self.view.controles['cmb_selecao'].currentText()
+            self.view.controles['txt_tarefa'].setText(nome_tarefa)
             hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
             minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
             desabilitar = carregar_dados['tarefas'][nome_tarefa]['desabilitar_tarefa']
             desligar = carregar_dados['tarefas'][nome_tarefa]['desligar']
-            self.view.controles['spin_hora'].set(hora_atualizada)
-            self.view.controles['spin_min'].set(minuto_atualizado)
-            self.view.controles['var_desabilitar'].set(desabilitar)
-            self.view.controles['var_desligar'].set(desligar)
+            self.view.controles['spin_hora'].setValue(int(hora_atualizada))
+            self.view.controles['spin_min'].setValue(int(minuto_atualizado))
+            self.view.controles['var_desabilitar'].setChecked(bool(desabilitar))
+            self.view.controles['var_desligar'].setChecked(bool(desligar))
             semanas =  ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
             chk_boxes = carregar_dados['tarefas'][nome_tarefa]['execucao']
             for i in range(len(chk_boxes)):
-                self.view.controles[f'var_{semanas[i]}'].set(chk_boxes[i])
+                self.view.controles[f'var_{semanas[i]}'].setChecked(bool(chk_boxes[i]))
 
-            diario = self.view.controles['var_diariamente'].get()
+            diario = self.view.controles['var_diariamente'].isChecked()
             index = 1
             if diario:
                 for i in range (len(chk_boxes) - 1):
-                    self.view.controles[f'chk_{semanas[index]}'].configure(state="disabled")
+                    self.view.controles[f'chk_{semanas[index]}'].setEnabled(False)
                     index += 1
             else:
                 for i in range (len(chk_boxes) - 1):
-                    self.view.controles[f'chk_{semanas[index]}'].configure(state="normal")
+                    self.view.controles[f'chk_{semanas[index]}'].setEnabled(True)
                     index += 1
 
             pastas_origem = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
@@ -789,7 +727,7 @@ class Funcoes:
             for i in range(len(pastas_origem)):
                 origem += f"   {pastas_origem[i]}\n"
                 destino += f"   {pastas_destino[i]}\n"
-            self.view.controles['lbl_pastas'].configure(text=f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
+            self.view.controles['lbl_pastas'].setText(f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
         else:
             # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
             valores_atuais = list(self.view.controles['cmb_selecao']['values'])
