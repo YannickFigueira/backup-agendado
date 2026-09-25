@@ -52,7 +52,8 @@ class JanelaConfiguracao(QDialog):
         self.setFixedSize(self.sizeHint())
 
     def _criar_barra_menu(self):
-        pass
+        self.menu_btn = self.barra_titulo.adicionar_submenu("Opções")
+        self.controles['menu_btn'] = self.menu_btn
 
     def _criar_layout(self):
         self.controles['janela_configuracao'] = self

@@ -231,8 +231,6 @@ class Funcoes:
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
     def _vincular_configuracoes(self):
         # --- Inicialização ---
-        log_mensagem("Reativar")
-
         self.carregar_cmb_selecao()
         self.atualizar_configuracao()
 
@@ -240,16 +238,15 @@ class Funcoes:
         self.view.controles['cmb_selecao'].currentTextChanged.connect(lambda _: self.atualizar_configuracao())
         self.view.controles['chk_diariamente'].stateChanged.connect(lambda: self.atualizar_checkbox())
         self.view.controles['btn_gravar'].clicked.connect(lambda: self.gravar_tarefa())
-        return
 
         # --- Controle dos Menus ---
-        self.view.controles['menu_btn'].adicionar_item("Editar Tarefa",
+        self.view.controles['menu_btn'].addAction("Editar Tarefa",
                                                       lambda: self.habilitar_edicao())
-        self.view.controles['menu_btn'].adicionar_item("Nova Tarefa",
+        self.view.controles['menu_btn'].addAction("Nova Tarefa",
                                                        lambda: self.abrir_janela_nova_tarefa())
-        self.view.controles['menu_btn'].adicionar_item("Alterar Pastas",
+        self.view.controles['menu_btn'].addAction("Alterar Pastas",
                                                       lambda: self.abrir_janela_alterar_pastas())
-        self.view.controles['menu_btn'].adicionar_item("Excluir Tarefa",
+        self.view.controles['menu_btn'].addAction("Excluir Tarefa",
                                                       lambda: self.abrir_janela_excluir_tarefa())
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
