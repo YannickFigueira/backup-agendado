@@ -12,13 +12,11 @@ import time
 import tkinter as tk
 from time import sleep
 
-from tkinter import filedialog, ttk
-from datetime import datetime
+from tkinter import filedialog
 
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
-from PyQt6.QtWidgets import QMessageBox
-from screeninfo import get_monitors
+from PyQt6.QtWidgets import QMessageBox, QPushButton
 
 import caixa_mensagem
 import verificarversao, dados_tinydb, copiar_arquivos, config
@@ -33,6 +31,7 @@ from janela_excluir_tarefa import JanelaExcluirTarefa
 carregar_dados = dados_tinydb.carregar_dados_tarefa()
 pasta_origem = []
 pasta_destino = []
+estados = {}
 editando_dados = False
 editando_novos_dados = False
 editando_excluir_dados = False
@@ -216,8 +215,6 @@ class Funcoes:
         menu_ajuda.addAction("Notas da versão", lambda: self.view.controles['lbl_multi_andamento'].setText(abrir_notas_versao()) )
         menu_ajuda.addAction("Sobre", lambda: self.visitar_site())
 
-        # --- Controle da Janela Principal ---
-
         # --- Controle da janela ---
         self.view.controles['btn_executar'].clicked.connect(lambda: self.executar_backup_interface(self.view.controles['cmb_selecao'].currentText()))
         # Pausar: chama a pausa direto na instância ativa da WorkerCopia
@@ -304,18 +301,18 @@ class Funcoes:
             logica.desabiliatar_menus_configuracao()
         else:
             log_mensagem("Reabilitar")
-            #logica.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
-            #logica.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "normal")
-            #logica.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
-        """
-        ##logica.view.controles['btn_gravar'].clickedConnect(state="disabled")
-        qtd_origem = len(self.view.controles['cmb_selecao'].cget('values'))
-        qtd_destino = len(logica.view.controles['cmb_selecao'].cget('values'))
+            logica.alterar_estado_item("Editar Tarefa", "normal")
+            logica.alterar_estado_item("Alterar Pastas", "normal")
+            logica.alterar_estado_item("Excluir Tarefa", "normal")
+
+        logica.view.controles['btn_gravar'].setEnabled(False)
+        qtd_origem = self.view.controles['cmb_selecao'].count()
+        qtd_destino = logica.view.controles['cmb_selecao'].count()
         if qtd_origem < qtd_destino:
             logica.carregar_cmb_selecao()
             editando_novos_dados = False
             logica.atualizar_configuracao()
-        """
+
         visual.exec()
 
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
@@ -347,10 +344,10 @@ class Funcoes:
         logica.view.controles['janela_nova_tarefa'].wait_window()
         nova_tarefa_aberta = False
         if atualizado_pastas:
-            self.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "disabled")
-            self.view.controles['menu_btn'].alterar_estado_item("Nova Tarefa", "disabled")
-            self.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "disabled")
-            self.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "disabled")
+            self.view.alterar_estado_item("Editar Tarefa", "disabled")
+            self.view.alterar_estado_item("Nova Tarefa", "disabled")
+            self.view.alterar_estado_item("Alterar Pastas", "disabled")
+            self.view.alterar_estado_item("Excluir Tarefa", "disabled")
 
         if editando_novos_dados:
             self.view.controles['btn_gravar'].configure(state="normal")
@@ -842,12 +839,12 @@ class Funcoes:
                 caixa_mensagem.info("Aviso", "Minimo de 3 letras!", self.view.controles['janela_configuracao'])
 
             # Habilitar menus
-            self.view.controles['menu_btn'].alterar_estado_item("Editar Tarefa", "normal")
-            self.view.controles['menu_btn'].alterar_estado_item("Alterar Pastas", "normal")
-            self.view.controles['menu_btn'].alterar_estado_item("Excluir Tarefa", "normal")
+            self.view.alterar_estado_item("Editar Tarefa", "normal")
+            self.view.alterar_estado_item("Alterar Pastas", "normal")
+            self.view.alterar_estado_item("Excluir Tarefa", "normal")
 
         self.view.controles['btn_gravar'].configure(state="disabled")
-        self.view.controles['menu_btn'].alterar_estado_item("Nova Tarefa", "normal")
+        self.view.alterar_estado_item("Nova Tarefa", "normal")
 
     # --- Funções da janela Nova tarefa ---
     def adicionar_nova_tarefa(self):
@@ -1035,9 +1032,6 @@ class Funcoes:
 
         self.worker.sinal_progresso.connect(atualizar_barra)
 
-        # 3. ZERA A INTERFACE ANTES DE INICIAR
-        #self.zerar_barra_progresso()
-
         # Gerencia habilitar/desabilitar botões
         def alternar_botoes(cmb_enabled, pausar_enabled, finalizado):
             self.view.controles['cmb_selecao'].setEnabled(cmb_enabled)
@@ -1066,8 +1060,25 @@ class Funcoes:
             if resposta == QMessageBox.StandardButton.Yes:
                 self.worker.solicitar_cancelamento()
 
-    def zerar_barra_progresso(self):
-        pbar = self.view.controles['progress_bar']
-        pbar.setValue(0)
-        pbar.setFormat("0.000%")
-        self.view.controles['label_copiado_contagem'].setText("0.00 B")
+    def alterar_estado_item(self, texto, estado):
+        global estados
+        """Altera o estado de um item para 'normal' ou 'disabled'."""
+        # Atualiza o dicionário interno de estados
+        estados[texto] = estado
+
+        # Converte 'normal' -> True e 'disabled' -> False
+        habilitado = (estado == "normal")
+
+        # Se você utiliza o menu nativo QMenu associado ao botão:
+        if hasattr(self, 'menu_popup') and self.menu_popup:
+            for action in self.menu_popup.actions():
+                if action.text() == texto:
+                    action.setEnabled(habilitado)
+                    break
+
+        # Caso seu popup seja um QWidget customizado contendo QPushButton:
+        elif hasattr(self, 'popup') and self.popup and self.popup.isVisible():
+            for child in self.popup.findChildren(QPushButton):
+                if child.text() == texto:
+                    child.setEnabled(habilitado)
+                    break

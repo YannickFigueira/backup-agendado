@@ -20,7 +20,7 @@ class MenuHamburguer(ctk.CTkButton):
         self.itens.append({"tipo": "item", "texto": texto, "comando": comando})
         self.estados[texto] = estado
 
-    def alterar_estado_item(self, texto, estado):
+    def alterar_estado_item_old(self, texto, estado):
         """Altera o estado de um item para 'normal' ou 'disabled'."""
         self.estados[texto] = estado
         if self.popup and self.popup.winfo_exists():
