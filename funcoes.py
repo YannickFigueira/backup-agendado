@@ -14,7 +14,7 @@ from time import sleep
 
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
-from PyQt6.QtWidgets import QMessageBox, QPushButton, QFileDialog
+from PyQt6.QtWidgets import QMessageBox, QPushButton, QFileDialog, QApplication
 
 import verificarversao, dados_tinydb, copiar_arquivos, config
 from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log, registrar_log
@@ -34,7 +34,6 @@ editando_novos_dados = False
 editando_excluir_dados = False
 editando_adicionar_pasta = False
 atualizado_pastas = False
-nova_tarefa_gravada = False
 # Variaveis alterar pastas
 origem_pasta = []
 destino_pasta = []
@@ -75,40 +74,6 @@ def abrir_notas_versao():
             conteudo = f.read()
 
         return conteudo
-
-    except FileNotFoundError:
-        return "Arquivo changelog.md não encontrado."
-
-def extrair_ultima_versao_changelog():
-    """
-    :return:
-    """
-    caminho_arquivo = "CHANGELOG.md"
-    if platform.system() == "Windows":
-        caminho_arquivo = "C:\\Programa Igreja\\doc\\CHANGELOG.md"
-    elif platform.system() == "Linux":
-        caminho_arquivo = "/usr/share/doc/programaigreja/CHANGELOG.md"
-    else:
-        print("Sistema não suportado")
-
-    try:
-        with open(caminho_arquivo, encoding="utf-8") as f:
-            conteudo = f.read()
-
-        # Expressão Regular explicada:
-        # (##\s*\[\d+\.\d+\.\d+\].*?) -> Grupo 1: Captura o cabeçalho da versão (ex: ## [0.4.1] - ...)
-        # (?=##\s*\[\d+\.\d+\.\d+\]|$) -> Lookahead: Para de capturar assim que encontrar OUTRO cabeçalho '## [X.X.X]' ou o fim do arquivo ($)
-        padrao = r"(##\s*\[\d+\.\d+\.\d+\].*?)(?=##\s*\[\d+\.\d+\.\d+\]|$)"
-
-        # re.DOTALL faz o ponto (.) capturar quebras de linha (\n) também
-        versoes = re.findall(padrao, conteudo, re.DOTALL)
-
-        if versoes:
-            # Pega o ÚLTIMO elemento da lista encontrada no arquivo
-            ultima_versao_texto = versoes[-1].strip()
-            return ultima_versao_texto
-        else:
-            return "Nenhuma versão no formato '## [X.X.X]' foi encontrada."
 
     except FileNotFoundError:
         return "Arquivo changelog.md não encontrado."
@@ -269,7 +234,6 @@ class Funcoes:
     # --- Execução das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):
         global editando_novos_dados, configuracao_aberta, carregar_dados
-        #self.view.controles['janela_principal'].attributes("-topmost", False)
         configuracao_aberta = True
         # 1. Cria a parte visual
         visual = JanelaConfiguracao(self.view)
@@ -277,10 +241,7 @@ class Funcoes:
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
 
-        #logica.centralizar_janela("janela_configuracao", self.view)
-
         # --- Inicialização ---
-        #nome_tarefa = logica.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
             logica.desabiliatar_menus_configuracao()
         else:
@@ -300,7 +261,6 @@ class Funcoes:
         visual.exec()
 
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
-        #self.view.controles['cmb_selecao'].clear()
         nome_tarefa = self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
             QMessageBox.information(self.view, "Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
@@ -382,7 +342,6 @@ class Funcoes:
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
-        #logica.centralizar_janela("janela_excluir_tarefa", self.view.controles['janela_configuracao'])
 
         logica.carregar_cmb_selecao()
         visual.exec()
@@ -402,7 +361,7 @@ class Funcoes:
 
             # 2. Cria a lógica e passa a visão para ela controlar
             logica = Funcoes(visual)
-            #logica.centralizar_janela("janela_logs_backup", self.view.controles['janela_principal'])
+
             visual.exec()
         else:
             QMessageBox.information(self.view, "Aviso", "Nenhum log foi gerado ainda")
@@ -437,12 +396,9 @@ class Funcoes:
 
                 # 2. Protege o agendamento no Tkinter contra encerramentos repentinos
                 try:
-                    lbl_multi_execucao.after(
-                        0,
-                        lambda texto=lista_executando: self.view.controles['lbl_multi_execucao'].configure(text=texto)
-                    )
+                    self.view.controles['lbl_multi_execucao'].setText(lista_executando)
                 except (tk.TclError, RuntimeError):
-                    break  # Tkinter foi fechado, interrompe a thread
+                    break
 
             except Exception as e:
                 erros_log = gerar_arquivo_log(config.log_erros)
@@ -450,20 +406,6 @@ class Funcoes:
 
                 # 3. Dorme 60 segundos
             sleep(60)
-
-    def fechar_janelas(self, janela):
-        global configuracao_aberta, nova_tarefa_aberta, excluir_tarefa_aberta, editando_dados
-
-        match janela:
-            case 'janela_principal':
-                if configuracao_aberta:
-                    return
-            case 'janela_configuracao':
-                editando_dados = False
-                if nova_tarefa_aberta or alterar_pasta_aberta or excluir_tarefa_aberta:
-                    return
-
-        self.view.controles[f'{janela}'].destroy()
 
     def carregar_cmb_selecao(self):
         print("Carregar cmb_selecao")
@@ -522,75 +464,44 @@ class Funcoes:
             "Alerta",
             "Fechando o programa o backup não será mais executado até que seja iniciado novamente",
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel  # Botão focado/padrão ao pressionar Enter
+            QMessageBox.StandardButton.Cancel,  # Botão focado por padrão
         )
 
         if resposta == QMessageBox.StandardButton.Ok:
-            if sistema == "Linux":
-                # 1. Oculta e destrói os objetos Qt no Linux
-                if hasattr(self, 'qt_tray') and self.qt_tray is not None:
-                    self.qt_tray.hide()
-                    self.qt_tray.deleteLater()
-                    self.qt_tray = None
+            # 1. Encerra o pystray no Windows (se estiver em uso)
+            tray_obj = icon or getattr(self, "icon_tray", None)
+            if tray_obj and hasattr(tray_obj, "stop"):
+                try:
+                    tray_obj.stop()
+                except Exception:
+                    pass
 
-                if hasattr(self, 'qt_app') and self.qt_app is not None:
-                    self.qt_app.quit()
-                    self.qt_app = None
+            # 2. Oculta e remove o ícone de bandeja nativo do PyQt (se existir)
+            if hasattr(self, "qt_tray") and self.qt_tray is not None:
+                self.qt_tray.hide()
+                self.qt_tray.deleteLater()
+                self.qt_tray = None
 
-                os._exit(0)
-            else:
-                # Lógica exclusiva para o Windows (pystray + Tkinter)
-                janela_principal = self.view.controles.get('janela_principal')
+            # 3. Encerra a aplicação PyQt
+            app = QApplication.instance()
+            if app:
+                app.quit()
 
-                # 1. Função interna para encerrar o Tkinter e o processo de forma limpa
-                def encerrar_windows():
-                    if janela_principal and janela_principal.winfo_exists():
-                        try:
-                            janela_principal.quit()
-                            janela_principal.destroy()
-                        except Exception:
-                            pass
-                    os._exit(0)
-
-                # 2. Agenda a destruição da janela para a Thread Principal do Tkinter
-                if janela_principal and janela_principal.winfo_exists():
-                    janela_principal.after(50, encerrar_windows)
-
-                # 3. Encerra o pystray para remover o ícone da barra de tarefas
-                tray_obj = icon or getattr(self, 'icon_tray', None)
-                if tray_obj and hasattr(tray_obj, 'stop'):
-                    try:
-                        tray_obj.stop()
-                    except Exception:
-                        pass
-
-                # Caso a janela principal já estivesse fechada, mata o processo com um pequeno delay
-                if not (janela_principal and janela_principal.winfo_exists()):
-                    import threading
-                    threading.Timer(0.1, lambda: os._exit(0)).start()
-
-    def _processar_eventos_qt(self):
-        """Processa a fila do Qt dentro do loop do Tkinter de forma não-bloqueante."""
-        if hasattr(self, 'qt_app') and self.qt_app is not None:
-            self.qt_app.processEvents()
-
-            # Pega a janela principal do Tkinter
-            janela = self.view.controles.get('janela_principal')
-            if janela and janela.winfo_exists():
-                janela.after(150, self._processar_eventos_qt)
+            # Encerra o processo de forma garantida
+            os._exit(0)
 
     def criar_bandeja(self):
         caminho_imagem = obter_caminho_recurso("imagens/backup.png")
 
         if sistema == "Linux":
-            from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
             from PyQt6.QtGui import QIcon
+            from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-            # 1. Cria/Recupera a instância do Qt na THREAD PRINCIPAL
+            # 1. Recupera ou cria a instância da aplicação PyQt
             self.qt_app = QApplication.instance() or QApplication(sys.argv)
             self.qt_app.setQuitOnLastWindowClosed(False)
 
-            # 2. Instancia o ícone
+            # 2. Instancia o ícone de bandeja do PyQt
             self.qt_tray = QSystemTrayIcon(QIcon(caminho_imagem))
             menu = QMenu()
 
@@ -603,52 +514,22 @@ class Funcoes:
             self.qt_tray.setContextMenu(menu)
             self.qt_tray.show()
 
-            # 3. Processa os eventos do Qt periodicamente via Tkinter (Sem travar!)
-            #self._processar_eventos_qt()
-
             return self.qt_tray
         else:
             # Mantém pystray para Windows
-            print('systray')
-            from pystray import Icon, MenuItem, Menu
             from PIL import Image
+            from pystray import Icon, Menu, MenuItem
 
             image = Image.open(caminho_imagem)
             menu = Menu(
                 MenuItem("Janela Principal", self.restaurar_janela),
                 MenuItem("Sair", self.fechar_programa),
             )
-            self.icon_tray = Icon("BackupAgendado", image, config.NOME_PROGRAMA, menu)
+            self.icon_tray = Icon(
+                "BackupAgendado", image, config.NOME_PROGRAMA, menu
+            )
             self.icon_tray.run_detached()
             return self.icon_tray
-
-    def centralizar_janela(self, janela, parent):
-        janela_child = self.view.controles[janela]
-
-        # 1. Esconde a janela temporariamente via transparência
-        janela_child.attributes("-alpha", 0.0)
-
-        # 2. Força o CustomTkinter a desenhar e dimensionar a interface
-        parent.update_idletasks()
-        janela_child.update_idletasks()
-        janela_child.update()
-
-        # 3. Pega os tamanhos reais já desenhados
-        p_width = parent.winfo_width()
-        p_height = parent.winfo_height()
-        p_x = parent.winfo_rootx()
-        p_y = parent.winfo_rooty()
-
-        c_width = janela_child.winfo_width()
-        c_height = janela_child.winfo_height()
-
-        # 4. Calcula as coordenadas centrais
-        x = p_x + (p_width // 2) - (c_width // 2)
-        y = p_y + (p_height // 2) - (c_height // 2)
-
-        # 5. Aplica a geometria centralizada e restaura a visibilidade
-        janela_child.geometry(f"{c_width}x{c_height}+{x}+{y}")
-        janela_child.attributes("-alpha", 1.0)
 
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):
@@ -801,8 +682,8 @@ class Funcoes:
                         editando_novos_dados = False
                         atualizado_pastas = False
                         QMessageBox.information(self.view, "Aviso", "Novos dados gravados com sucesso!")
-                        qtd_origem = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
-                        if len(qtd_origem) > 1:
+                        qtd_origem = cmb_selecao.count()
+                        if qtd_origem > 1:
                             if self.view.controles['cmb_selecao'].currentText() == "inicial":
                                 dados_tinydb.apagar_dados_tarefa("inicial")
                                 carregar_dados = dados_tinydb.carregar_dados_tarefa()
@@ -834,7 +715,6 @@ class Funcoes:
         self.view.controles['btn_gravar'].setEnabled(False)
         self.alterar_estado_item("Nova Tarefa", "normal")
 
-        #self.carregar_cmb_selecao()
         self.atualizar_configuracao(nome_tarefa)
 
     # --- Funções da janela Nova tarefa ---
@@ -843,8 +723,6 @@ class Funcoes:
         if existe:
             origem = self.view.controles['txt_origem'].text().strip()
             pasta_origem.append(origem)
-            # Extrai o nome da última pasta ("Development")
-            #nome_pasta = os.path.basename(origem.rstrip("/")) Pegar o nome da pasta de origem
             pasta_destino.append(self.view.controles['txt_destino'].text().strip())
 
             self.view.controles['txt_origem'].setText("")
@@ -909,7 +787,7 @@ class Funcoes:
     def excluir_pasta(self, nome_tarefa):
         global origem_pasta, destino_pasta, carregar_dados
         cmb_selecao = self.view.controles['cmb_selecao']
-        qtd_origem = len([cmb_selecao.itemText(i) for i in range(cmb_selecao.count())])
+        qtd_origem = cmb_selecao.count()
         if qtd_origem > 1:
             resposta = QMessageBox.question(
                 self.view,
@@ -967,7 +845,7 @@ class Funcoes:
         )
         if resposta == QMessageBox.StandardButton.Yes:
             nome_tarefa = self.view.controles['cmb_selecao'].currentText()
-            qtd_tarefa = len([cmb_selecao.itemText(i) for i in range(cmb_selecao.count())])
+            qtd_tarefa = cmb_selecao.count()
             dados_tinydb.apagar_dados_tarefa(nome_tarefa)
 
             if qtd_tarefa == 1:
@@ -1003,24 +881,6 @@ class Funcoes:
         if msg_box.clickedButton() == btn_sim:
             # Abre a URL (usando QDesktopServices ou webbrowser.open)
             QDesktopServices.openUrl(QUrl(pagina))
-
-    # --- Menu e título ---
-    def _iniciar_arraste(self, event):
-        self._x = event.x
-        self._y = event.y
-
-    def _arrastar_janela(self, event, janela):
-        tempo_atual = time.time()
-
-        # Processa a movimentação no máximo a cada ~16ms (~60 FPS)
-        if tempo_atual - self._ultimo_movimento < 0.016:
-            return
-
-        self._ultimo_movimento = tempo_atual
-
-        x = self.view.controles[janela].winfo_pointerx() - self._x
-        y = self.view.controles[janela].winfo_pointery() - self._y
-        self.view.controles[janela].geometry(f"+{x}+{y}")
 
     def executar_backup_interface(self, nome_tarefa):
         # Instancia a WorkerCopia
