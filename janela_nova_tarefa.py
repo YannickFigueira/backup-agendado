@@ -1,70 +1,115 @@
-import tkinter as tk
-import customtkinter as ctk
-
-import barra_menu
 import config
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QDialog,
+    QFrame,
+    QGridLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+)
 
-class JanelaNovaTarefa:
-    def __init__(self, janela):
-        self.janela_nova_tarefa = ctk.CTkToplevel(janela)
-        self.janela_nova_tarefa.title("Nova Tarefa")
-        self.janela_nova_tarefa.overrideredirect(True)
-        #self.janela_config.geometry("600x400")
-        # Garante que esta janela apareça SEMPRE por cima da principal
-        self.janela_nova_tarefa.transient(janela)
+import tema
+# Importa a barra de título customizada do seu módulo
+from barra_titulo_subjanela import BarraTituloSubjanela
 
-        self.nome_janela = "nova-tarefa"  # <-- Identificador para o controlador
+
+class JanelaNovaTarefa(QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # Configurações de modalidade e janela sem bordas (Frameless)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Dialog
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
+        self.setModal(True)
+        self.setWindowTitle("Nova Tarefa")
+
+        # Identificadores de controle
+        self.nome_janela = "nova-tarefa"
         self.janela_controle = "janela_nova_tarefa"
-        self.controles = {}
+        self.controles = {self.janela_controle: self}
 
+        # Layout Principal (Vertical)
+        self.layout_principal = QVBoxLayout(self)
+        self.layout_principal.setContentsMargins(0, 0, 0, 0)
+        self.layout_principal.setSpacing(0)
+
+        # 1. Adiciona a Barra de Título Customizada no topo
+        self.barra_titulo = BarraTituloSubjanela(
+            self, titulo=self.windowTitle()
+        )
+        self.layout_principal.addWidget(self.barra_titulo)
+
+        # 2. Constrói o corpo/painel de campos
         self._criar_layout()
-        barra_menu.criar_barra_menu(self, self.janela_nova_tarefa.title(), self.janela_controle, True)
+
+        tema.conectar_mudanca_tema(self)
+        tema.atualizar_tema(self)
 
     def _criar_layout(self):
-        # --- Controles da janela ---
-        self.controles[self.janela_controle] = self.janela_nova_tarefa
-        # Opcional: Bloqueia a janela principal até que esta seja fechada (Modal)
-        self.janela_nova_tarefa.grab_set()
-        self.janela_nova_tarefa.focus_force()
+        # Frame do Conteúdo (Painel de Campos)
+        self.frame_campos = QFrame(self)
+        self.layout_principal.addWidget(self.frame_campos)
 
-        ## Painel da janela
-        self.frame_campos = ctk.CTkFrame(self.janela_nova_tarefa)
-        self.frame_campos.grid(row=1, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="ew")
+        # Layout em Grade para alinhar Rótulos, Campos e Botões
+        grid = QGridLayout(self.frame_campos)
+        grid.setContentsMargins(
+            config.ESPACO, config.ESPACO, config.ESPACO, config.ESPACO
+        )
+        grid.setSpacing(config.ESPACO)
 
-        ## Controles do painel campos
-        linha_campo = 0
-
-        self.lbl_origem = ctk.CTkLabel(self.frame_campos, text="Origem:", font=config.FONTE_ARIAL)
-        self.lbl_origem.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
-
+        linha = 0
         largura_texto = 300
-        self.txt_origem = ctk.CTkEntry(self.frame_campos, width=largura_texto, font=config.FONTE_ARIAL)
-        self.txt_origem.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO)
-        self.controles['txt_origem'] = self.txt_origem
 
-        self.btn_selecionar_origem = ctk.CTkButton(self.frame_campos, text="...", width=40)
-        self.btn_selecionar_origem.grid(row=linha_campo, column=2, padx=config.ESPACO, pady=config.ESPACO)
-        self.controles['btn_selecionar_origem'] = self.btn_selecionar_origem
-        linha_campo += 1
+        # --- Campo Origem ---
+        self.lbl_origem = QLabel("Origem:", self.frame_campos)
+        grid.addWidget(self.lbl_origem, linha, 0, Qt.AlignmentFlag.AlignLeft)
 
-        self.lbl_destino = ctk.CTkLabel(self.frame_campos, text="Destino:", font=config.FONTE_ARIAL)
-        self.lbl_destino.grid(row=linha_campo, column=0, padx=config.ESPACO, pady=config.ESPACO, sticky="w")
+        self.txt_origem = QLineEdit(self.frame_campos)
+        self.txt_origem.setFixedWidth(largura_texto)
+        self.controles["txt_origem"] = self.txt_origem
+        grid.addWidget(self.txt_origem, linha, 1)
 
-        self.txt_destino = ctk.CTkEntry(self.frame_campos, width=largura_texto, font=config.FONTE_ARIAL)
-        self.txt_destino.grid(row=linha_campo, column=1, padx=config.ESPACO, pady=config.ESPACO)
-        self.controles['txt_destino'] = self.txt_destino
+        self.btn_selecionar_origem = QPushButton("...", self.frame_campos)
+        self.btn_selecionar_origem.setObjectName("BtnAcao")
+        self.btn_selecionar_origem.setFixedWidth(40)
+        self.controles["btn_selecionar_origem"] = self.btn_selecionar_origem
+        grid.addWidget(self.btn_selecionar_origem, linha, 2)
+        linha += 1
 
-        self.btn_selecionar_destino = ctk.CTkButton(self.frame_campos, text="...", width=40)
-        self.btn_selecionar_destino.grid(row=linha_campo, column=2, padx=config.ESPACO, pady=config.ESPACO)
-        self.controles['btn_selecionar_destino'] = self.btn_selecionar_destino
-        linha_campo += 1
+        # --- Campo Destino ---
+        self.lbl_destino = QLabel("Destino:", self.frame_campos)
+        grid.addWidget(self.lbl_destino, linha, 0, Qt.AlignmentFlag.AlignLeft)
 
-        self.btn_adicionar = ctk.CTkButton(self.frame_campos, text="Adicionar pasta")
-        self.btn_adicionar.grid(row=linha_campo, column=0, columnspan=3, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
-        self.controles['btn_adicionar'] = self.btn_adicionar
-        linha_campo += 1
+        self.txt_destino = QLineEdit(self.frame_campos)
+        self.txt_destino.setFixedWidth(largura_texto)
+        self.controles["txt_destino"] = self.txt_destino
+        grid.addWidget(self.txt_destino, linha, 1)
 
-        self.btn_salvar = ctk.CTkButton(self.frame_campos, text="Salvar pastas")
-        self.btn_salvar.grid(row=linha_campo, column=0, columnspan=3, padx=config.ESPACO, pady=config.ESPACO, sticky="nsew")
-        self.btn_salvar.configure(state="disabled")
-        self.controles['btn_salvar'] = self.btn_salvar
+        self.btn_selecionar_destino = QPushButton("...", self.frame_campos)
+        self.btn_selecionar_destino.setObjectName("BtnAcao")
+        self.btn_selecionar_destino.setFixedWidth(40)
+        self.controles["btn_selecionar_destino"] = self.btn_selecionar_destino
+        grid.addWidget(self.btn_selecionar_destino, linha, 2)
+        linha += 1
+
+        # --- Botão Adicionar Pasta ---
+        self.btn_adicionar = QPushButton(
+            "Adicionar pasta", self.frame_campos
+        )
+        self.btn_adicionar.setObjectName("BtnAcao")
+        self.controles["btn_adicionar"] = self.btn_adicionar
+        grid.addWidget(self.btn_adicionar, linha, 0, 1, 3)
+        linha += 1
+
+        # --- Botão Salvar Pastas ---
+        self.btn_salvar = QPushButton("Salvar pastas", self.frame_campos)
+        self.btn_salvar.setObjectName("BtnAcao")
+        self.btn_salvar.setEnabled(False)  # Equivalente ao state="disabled"
+        self.controles["btn_salvar"] = self.btn_salvar
+        grid.addWidget(self.btn_salvar, linha, 0, 1, 3)

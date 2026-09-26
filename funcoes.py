@@ -250,11 +250,10 @@ class Funcoes:
     # --- LÓGICA DA JANELA DE NOVA TAREFA ---
     def _vincular_nova_tarefa(self):
         # --- Controles da janela Nova Tarefa ---
-        self.view.controles['btn_fechar'].configure(command=lambda: self.fechar_janelas('janela_nova_tarefa'))
-        self.view.controles['btn_selecionar_origem'].configure(command=lambda: self.selecionar_pastas('txt_origem'))
-        self.view.controles['btn_selecionar_destino'].configure(command=lambda: self.selecionar_pastas('txt_destino'))
-        self.view.controles['btn_adicionar'].configure(command=lambda: self.adicionar_nova_tarefa())
-        self.view.controles['btn_salvar'].configure(command=lambda: self.gravar_pastas())
+        self.view.controles['btn_selecionar_origem'].clicked.connect(lambda: self.selecionar_pastas('txt_origem'))
+        self.view.controles['btn_selecionar_destino'].clicked.connect(lambda: self.selecionar_pastas('txt_destino'))
+        self.view.controles['btn_adicionar'].clicked.connect(lambda: self.adicionar_nova_tarefa())
+        self.view.controles['btn_salvar'].clicked.connect(lambda: self.gravar_pastas())
 
     # --- LÓGICA DA JANELA ALTERAR PASTAS ---
     def _vincular_alterar_pastas(self):
@@ -341,7 +340,7 @@ class Funcoes:
             pasta_origem = []
             pasta_destino = []
 
-        logica.view.controles['janela_nova_tarefa'].wait_window()
+        visual.exec()
         nova_tarefa_aberta = False
         if atualizado_pastas:
             self.view.alterar_estado_item("Editar Tarefa", "disabled")
