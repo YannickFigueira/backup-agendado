@@ -496,7 +496,6 @@ class Funcoes:
                 return False
         else:
             QMessageBox.information(self.view, "Aviso", "Selecione uma pasta de origem")
-            self.view.controles['txt_origem'].focus_set()
             return False
 
     def selecionar_pastas(self, controle):
@@ -873,13 +872,13 @@ class Funcoes:
         existe = self.verificar_pastas_existentes()
         if existe:
             if not editando_adicionar_pasta:
-                origem_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_origem'].get().strip()
-                destino_pasta[self.view.controles['cmb_selecao'].current()] = self.view.controles['txt_destino'].get().strip()
+                origem_pasta[self.view.controles['cmb_selecao'].currentIndex()] = self.view.controles['txt_origem'].text().strip()
+                destino_pasta[self.view.controles['cmb_selecao'].currentIndex()] = self.view.controles['txt_destino'].text().strip()
             else:
-                origem_pasta.append(self.view.controles['txt_origem'].get().strip())
-                destino_pasta.append(self.view.controles['txt_destino'].get().strip())
-                self.view.controles['btn_adicionar_pasta'].config(state="normal")
-                self.view.controles['btn_gravar_adicionar'].config(state="disabled")
+                origem_pasta.append(self.view.controles['txt_origem'].text().strip())
+                destino_pasta.append(self.view.controles['txt_destino'].text().strip())
+                self.view.controles['btn_adicionar_pasta'].setEnabled(True)
+                self.view.controles['btn_gravar_adicionar'].setEnabled(False)
 
             dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_origem', origem_pasta)
             dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
@@ -889,24 +888,28 @@ class Funcoes:
 
     def adicionar_pasta(self):
         global editando_adicionar_pasta
+        cmb_selecao = self.view.controles['cmb_selecao']
         existe = self.verificar_pastas_existentes()
         if existe:
-            valores_atuais = list(self.view.controles['cmb_selecao']['values'])
+            valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
             index = 1
             pastas = []
             for i in range(len(valores_atuais) + 1):
                 pastas.append(f"Pasta{index}")
                 index += 1
-            self.view.controles['cmb_selecao']['values'] = pastas
-            self.view.controles['cmb_selecao'].current(len(pastas) - 1)
-            self.view.controles['txt_origem'].delete(0, "end")
+            cmb_selecao.blockSignals(True)
+            cmb_selecao.clear()
+            cmb_selecao.addItems(pastas)
+            self.view.controles['cmb_selecao'].currentIndex()
             editando_adicionar_pasta = True
-            self.view.controles['btn_adicionar_pasta'].config(state="disabled")
-            self.view.controles['btn_gravar_adicionar'].config(state="normal")
+            self.view.controles['btn_adicionar_pasta'].setEnabled(False)
+            self.view.controles['btn_gravar_adicionar'].setEnabled(True)
+            cmb_selecao.blockSignals(False)
 
     def excluir_pasta(self, nome_tarefa):
         global origem_pasta, destino_pasta, carregar_dados
-        qtd_origem = len(self.view.controles['cmb_selecao']['values'])
+        cmb_selecao = self.view.controles['cmb_selecao']
+        qtd_origem = len([cmb_selecao.itemText(i) for i in range(cmb_selecao.count())])
         if qtd_origem > 1:
             resposta = QMessageBox.question(
                 self.view,
@@ -917,11 +920,11 @@ class Funcoes:
             )
 
             if resposta == QMessageBox.StandardButton.Yes:
-                valores_atuais = list(self.view.controles['cmb_selecao']['values'])
+                valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
                 valores_novos_pasta_origem = []
                 valores_novos_pasta_destino = []
                 for i in range(len(valores_atuais)):
-                    if i != self.view.controles['cmb_selecao'].current():
+                    if i != self.view.controles['cmb_selecao'].currentIndex():
                         valores_novos_pasta_origem.append(origem_pasta[i])
                         valores_novos_pasta_destino.append(destino_pasta[i])
 
@@ -929,7 +932,7 @@ class Funcoes:
                 destino_pasta.clear()
                 origem_pasta = valores_novos_pasta_origem
                 destino_pasta = valores_novos_pasta_destino
-                self.view.controles['cmb_selecao'].current(0)
+                self.view.controles['cmb_selecao'].setCurrentIndex(0)
                 self.carregar_pastas()
 
                 index = 1
@@ -938,8 +941,9 @@ class Funcoes:
                     pastas.append(f"Pasta{index}")
                     index += 1
 
-                self.view.controles['cmb_selecao']['values'] = pastas
-                self.view.controles['cmb_selecao'].current(0)
+                cmb_selecao.clear()
+                cmb_selecao.addItems(pastas)
+                cmb_selecao.setCurrentIndex(0)
 
                 dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_origem', origem_pasta)
                 dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)

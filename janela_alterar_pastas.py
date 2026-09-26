@@ -96,6 +96,7 @@ class JanelaAlterarPastas(QDialog):
         grid_campos.addWidget(self.txt_origem, linha, 1)
 
         self.btn_selecionar_origem = QPushButton("...", self.frame_campos)
+        self.btn_selecionar_origem.setObjectName("BtnAcao")
         self.btn_selecionar_origem.setFixedWidth(40)
         self.controles["btn_selecionar_origem"] = self.btn_selecionar_origem
         grid_campos.addWidget(self.btn_selecionar_origem, linha, 2)
@@ -112,6 +113,7 @@ class JanelaAlterarPastas(QDialog):
         grid_campos.addWidget(self.txt_destino, linha, 1)
 
         self.btn_selecionar_destino = QPushButton("...", self.frame_campos)
+        self.btn_selecionar_destino.setObjectName("BtnAcao")
         self.btn_selecionar_destino.setFixedWidth(40)
         self.controles["btn_selecionar_destino"] = self.btn_selecionar_destino
         grid_campos.addWidget(self.btn_selecionar_destino, linha, 2)
@@ -119,6 +121,7 @@ class JanelaAlterarPastas(QDialog):
 
         # Botão Alterar Pasta
         self.btn_alterar = QPushButton("Alterar pasta", self.frame_campos)
+        self.btn_alterar.setObjectName("BtnAcao")
         self.controles["btn_alterar"] = self.btn_alterar
         grid_campos.addWidget(self.btn_alterar, linha, 0, 1, 3)
         linha += 1
@@ -127,6 +130,7 @@ class JanelaAlterarPastas(QDialog):
         self.btn_excluir_pasta = QPushButton(
             "Excluir pasta", self.frame_campos
         )
+        self.btn_excluir_pasta.setObjectName("BtnAcao")
         self.controles["btn_excluir_pasta"] = self.btn_excluir_pasta
         grid_campos.addWidget(self.btn_excluir_pasta, linha, 0, 1, 3)
 
@@ -141,12 +145,14 @@ class JanelaAlterarPastas(QDialog):
         self.btn_adicionar_pasta = QPushButton(
             "Adicionar nova pasta", self.frame_adicionar
         )
+        self.btn_adicionar_pasta.setObjectName("BtnAcao")
         self.controles["btn_adicionar_pasta"] = self.btn_adicionar_pasta
         layout_adicionar.addWidget(self.btn_adicionar_pasta, stretch=1)
 
         self.btn_gravar_adicionar = QPushButton(
             "Gravar nova pasta", self.frame_adicionar
         )
+        self.btn_gravar_adicionar.setObjectName("BtnAcao")
         self.controles["btn_gravar_adicionar"] = self.btn_gravar_adicionar
         layout_adicionar.addWidget(self.btn_gravar_adicionar, stretch=1)
 
