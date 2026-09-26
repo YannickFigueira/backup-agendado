@@ -12,13 +12,10 @@ import time
 import tkinter as tk
 from time import sleep
 
-from tkinter import filedialog
-
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
-from PyQt6.QtWidgets import QMessageBox, QPushButton
+from PyQt6.QtWidgets import QMessageBox, QPushButton, QFileDialog
 
-import caixa_mensagem
 import verificarversao, dados_tinydb, copiar_arquivos, config
 from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log, registrar_log
 from janela_alterar_pastas import JanelaAlterarPastas
@@ -59,16 +56,6 @@ def log_mensagem(msg):
     else:
         # Fallback caso não encontre o frame anterior (ex: chamado do escopo global)
         print(f"{msg} (arquivo: desconhecido, linha: desconhecida)")
-
-def selecionar_pasta():
-    """
-    :return:
-    """
-    pasta = filedialog.askdirectory(title="Selecione uma pasta")
-    if pasta:  # se o usuário não cancelar
-        return pasta
-    else:
-        return ""
 
 ## Notas da versão
 def abrir_notas_versao():
@@ -223,7 +210,7 @@ class Funcoes:
         self.view.controles['cmb_selecao'].currentTextChanged.connect(lambda _: self.atualizar_informacoes(self.view.controles['cmb_selecao'].currentText()))
 
         if nome_tarefa == "inicial":
-            caixa_mensagem.info("Aviso", "Insira a primeira tarefa", self.view.controles['janela_principal'])
+            QMessageBox.information(self.view, "Aviso", "Insira a primeira tarefa")
             self.abrir_janela_configuracoes(nome_tarefa)
 
     # --- LÓGICA DA JANELA DE CONFIGURAÇÕES ---
@@ -318,8 +305,7 @@ class Funcoes:
         #self.view.controles['cmb_selecao'].clear()
         nome_tarefa = self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
-            caixa_mensagem.info("Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!",
-                                self.view.controles['janela_configuracao'])
+            QMessageBox.information(self.view, "Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
             self.fechar_programa()
         else:
             configuracao_aberta = False
@@ -420,7 +406,7 @@ class Funcoes:
             #logica.centralizar_janela("janela_logs_backup", self.view.controles['janela_principal'])
             visual.exec()
         else:
-            caixa_mensagem.info("Aviso", "Nenhum log foi gerado ainda", self.view.controles['janela_logs_backup'])
+            QMessageBox.information(self.view, "Aviso", "Nenhum log foi gerado ainda")
 
     # --- Funções Gerais ---
     def verificar_tarefa_executando(self):
@@ -492,31 +478,39 @@ class Funcoes:
         return nome_tarefa
 
     def verificar_pastas_existentes(self):
-        verificar_origem = self.view.controles['txt_origem'].get().strip()
-        verificar_destino = self.view.controles['txt_destino'].get().strip()
+        verificar_origem = self.view.controles['txt_origem'].text().strip()
+        verificar_destino = self.view.controles['txt_destino'].text().strip()
         if verificar_origem != "":
             if verificar_destino != "":
                 if os.path.exists(verificar_origem):
                     if os.path.exists(verificar_destino):
                         return True
                     else:
-                        caixa_mensagem.info("Aviso", "Pasta de destino não existe!", self.view.controles['janela_configuracao'])
+                        QMessageBox.information(self.view, "Aviso", "Pasta de destino não existe!")
                         return False
                 else:
-                    caixa_mensagem.info("Aviso", "Pasta de origem não existe!", self.view.controles['janela_configuracao'])
+                    QMessageBox.information(self.view, "Aviso", "Pasta de origem não existe!")
                     return False
             else:
-                caixa_mensagem.info("Aviso", "Selecione uma pasta de destino", self.view.controles['janela_configuracao'])
+                QMessageBox.information(self.view, "Aviso", "Selecione uma pasta de destino")
                 self.view.controles['txt_destino'].focus_set()
                 return False
         else:
-            caixa_mensagem.info("Aviso", "Selecione uma pasta de origem", self.view.controles[self.view.janela_controle])
+            QMessageBox.information(self.view, "Aviso", "Selecione uma pasta de origem")
             self.view.controles['txt_origem'].focus_set()
             return False
 
     def selecionar_pastas(self, controle):
-        self.view.controles[controle].delete(0, "end")
-        self.view.controles[controle].insert(0, selecionar_pasta())
+        self.view.controles[controle].setText(self.selecionar_pasta())
+
+    def selecionar_pasta(self=None):
+        """Abre o seletor de pastas centralizado na janela do aplicativo."""
+        pasta = QFileDialog.getExistingDirectory(
+            parent=self.view,
+            caption="Selecione uma pasta",
+            directory=""  # Caminho inicial opcional
+        )
+        return pasta  # Retorna a string do caminho ou "" se o usuário cancelar
 
     def restaurar_janela(self):
         # Restaura a janela se ela estiver minimizada ou oculta
@@ -860,10 +854,10 @@ class Funcoes:
             atualizado_pastas = True
             self.view.controles['txt_destino'].delete(0, "end")
             editando_novos_dados = True
-            caixa_mensagem.info("Aviso", "Nova tarefa pronta para ser gravada", self.view.controles['janela_configuracao'])
+            QMessageBox.information(self.view, "Aviso", "Nova tarefa pronta para ser gravada")
             self.view.controles['janela_nova_tarefa'].destroy()
         else:
-            caixa_mensagem.info("Aviso", "Adicione ao menos uma pasta", self.view.controles['janela_configuracao'])
+            QMessageBox.information(self.view, "Aviso", "Adicione ao menos uma pasta")
 
     # --- Funcões da Janela Alterar Pastas ---
     def carregar_pastas(self):
@@ -890,7 +884,7 @@ class Funcoes:
             dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
 
-            caixa_mensagem.info("Aviso", "Pastas alteradas com sucesso!", self.view.controles['janela_configuracao'])
+            QMessageBox.information(self.view, "Aviso", "Pastas alteradas com sucesso!")
 
     def adicionar_pasta(self):
         global editando_adicionar_pasta
@@ -913,8 +907,15 @@ class Funcoes:
         global origem_pasta, destino_pasta, carregar_dados
         qtd_origem = len(self.view.controles['cmb_selecao']['values'])
         if qtd_origem > 1:
-            resposta = caixa_mensagem.sim_nao("Atenção", "Pasta será excluída!", self.view.controles['janela_configuracao'])
-            if resposta == "Sim":
+            resposta = QMessageBox.question(
+                self.view,
+                "Atenção",
+                "Pasta será excluída!",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No  # Botão padrão pré-selecionado por segurança
+            )
+
+            if resposta == QMessageBox.StandardButton.Yes:
                 valores_atuais = list(self.view.controles['cmb_selecao']['values'])
                 valores_novos_pasta_origem = []
                 valores_novos_pasta_destino = []
@@ -943,16 +944,22 @@ class Funcoes:
                 dados_tinydb.atualizar_campo_tarefa(nome_tarefa, 'pastas_destino', destino_pasta)
                 carregar_dados = dados_tinydb.carregar_dados_tarefa()
 
-                caixa_mensagem.info("Aviso", "Pastas excluida com sucesso!", self.view.controles['janela_configuracao'])
+                QMessageBox.information(self.view, "Aviso", "Pastas excluida com sucesso!")
         else:
-            caixa_mensagem.info("Aviso", "Existe somente uma pasta, para excluir deve apagar a tarefa!", self.view.controles['janela_configuracao'])
+            QMessageBox.information(self.view, "Aviso", "Existe somente uma pasta, para excluir deve apagar a tarefa!")
 
 
     # --- Funções da Janela Excluir Tarefa ---
     def excluir_tarefa(self):
         global editando_excluir_dados, carregar_dados
-        resposta = caixa_mensagem.sim_nao("Atenção", "Tarefa será excluída!", self.view.controles['janela_configuracao'])
-        if resposta == "Sim":
+        resposta = QMessageBox.question(
+            self.view,
+            "Atenção",
+            "Tarefa será excluida!",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No  # Botão padrão pré-selecionado por segurança
+        )
+        if resposta == QMessageBox.StandardButton.Yes:
             nome_tarefa = self.view.controles['cmb_selecao'].get()
             qtd_tarefa = len(self.view.controles['cmb_selecao']['values'])
             dados_tinydb.apagar_dados_tarefa(nome_tarefa)

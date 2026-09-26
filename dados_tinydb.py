@@ -1,8 +1,7 @@
 import os
 
+from PyQt6.QtWidgets import QMessageBox
 from tinydb import TinyDB, Query
-
-import caixa_mensagem
 
 dados_dir = "dados"
 if not os.path.exists(dados_dir):
@@ -112,7 +111,7 @@ def apagar_dados_tarefa(nome_tarefa):
         # 4. Salva o documento atualizado de volta no TinyDB
         tabela_config.update(config_atual, Config.id_config == "global")
         if nome_tarefa != "inicial":
-            caixa_mensagem.info("Aviso", "Tarefa removida com sucesso!")
+            QMessageBox.information(None,"Aviso", "Tarefa removida com sucesso!")
         return True
     else:
         print(f"Erro: A tarefa '{nome_tarefa}' não foi encontrada para remoção.")
