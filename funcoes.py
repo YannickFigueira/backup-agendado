@@ -245,10 +245,8 @@ class Funcoes:
     # --- LÓGICA DA JANELA ALTERAR PASTAS ---
     def _vincular_alterar_pastas(self):
         # --- Controles da janela Alterar Pastas ---
-        self.view.controles['janela_alterar_pastas'].protocol("WM_DELETE_WINDOW",
-                                                           lambda: self.fechar_janelas('janela_alterar_pastas'))
-        self.view.controles['btn_selecionar_origem'].config(command=lambda: self.selecionar_pastas('txt_origem'))
-        self.view.controles['btn_selecionar_destino'].config(command=lambda: self.selecionar_pastas('txt_destino'))
+        self.view.controles['btn_selecionar_origem'].clicked.connect(lambda: self.selecionar_pastas('txt_origem'))
+        self.view.controles['btn_selecionar_destino'].clicked.connect(lambda: self.selecionar_pastas('txt_destino'))
 
     # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
     def _vincular_excluir_tarefa(self):
@@ -350,28 +348,29 @@ class Funcoes:
         #logica.centralizar_janela("janela_alterar_pastas", self.view.controles['janela_configuracao'])
 
         # Carregar configuração
-        nome_tarefa = self.view.controles['cmb_selecao'].get()
+        nome_tarefa = self.view.controles['cmb_selecao'].currentText()
         quantidade_pastas = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         index = 1
         pastas = []
         for i in range(len(quantidade_pastas)):
             pastas.append(f"Pasta{index}")
             index += 1
-        logica.view.controles['btn_gravar_adicionar'].config(state="disabled")
-        logica.view.controles['cmb_selecao'].config(values=list(pastas))
-        logica.view.controles['cmb_selecao'].current(0)
+        logica.view.controles['btn_gravar_adicionar'].setEnabled(False)
+        logica.view.controles['cmb_selecao'].clear()
+        logica.view.controles['cmb_selecao'].addItems(pastas)
+        logica.view.controles['cmb_selecao'].setCurrentIndex(0)
         origem_pasta = carregar_dados['tarefas'][nome_tarefa]['pastas_origem']
         destino_pasta = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
         # --- Controles ---
-        logica.view.controles['cmb_selecao'].bind("<<ComboboxSelected>>", lambda _: logica.carregar_pastas())
-        logica.view.controles['btn_alterar'].config(command=lambda: logica.gravar_alterar_pastas(nome_tarefa))
-        logica.view.controles['btn_excluir_pasta'].config(command=lambda: logica.excluir_pasta(nome_tarefa))
-        logica.view.controles['btn_adicionar_pasta'].config(command=lambda: logica.adicionar_pasta())
-        logica.view.controles['btn_gravar_adicionar'].config(command=lambda: logica.gravar_alterar_pastas(nome_tarefa))
+        logica.view.controles['cmb_selecao'].currentTextChanged.connect(lambda _: logica.carregar_pastas())
+        logica.view.controles['btn_alterar'].clicked.connect(lambda: logica.gravar_alterar_pastas(nome_tarefa))
+        logica.view.controles['btn_excluir_pasta'].clicked.connect(lambda: logica.excluir_pasta(nome_tarefa))
+        logica.view.controles['btn_adicionar_pasta'].clicked.connect(lambda: logica.adicionar_pasta())
+        logica.view.controles['btn_gravar_adicionar'].clicked.connect(lambda: logica.gravar_alterar_pastas(nome_tarefa))
 
         # --- inicialização ---
         logica.carregar_pastas()
-        logica.view.controles['janela_alterar_pastas'].wait_window()
+        visual.exec()
         self.atualizar_configuracao(nome_tarefa)
         alterar_pasta_aberta = False
 
@@ -866,10 +865,8 @@ class Funcoes:
     # --- Funcões da Janela Alterar Pastas ---
     def carregar_pastas(self):
         global origem_pasta, destino_pasta
-        self.view.controles['txt_origem'].delete(0, "end")
-        self.view.controles['txt_origem'].insert(0, origem_pasta[self.view.controles['cmb_selecao'].current()])
-        self.view.controles['txt_destino'].delete(0, "end")
-        self.view.controles['txt_destino'].insert(0, destino_pasta[self.view.controles['cmb_selecao'].current()])
+        self.view.controles['txt_origem'].setText(origem_pasta[self.view.controles['cmb_selecao'].currentIndex()])
+        self.view.controles['txt_destino'].setText(destino_pasta[self.view.controles['cmb_selecao'].currentIndex()])
 
     def gravar_alterar_pastas(self, nome_tarefa):
         global origem_pasta, destino_pasta, carregar_dados, editando_adicionar_pasta
