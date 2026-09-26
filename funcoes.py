@@ -329,13 +329,13 @@ class Funcoes:
         visual.exec()
         nova_tarefa_aberta = False
         if atualizado_pastas:
-            self.view.alterar_estado_item("Editar Tarefa", "disabled")
-            self.view.alterar_estado_item("Nova Tarefa", "disabled")
-            self.view.alterar_estado_item("Alterar Pastas", "disabled")
-            self.view.alterar_estado_item("Excluir Tarefa", "disabled")
+            self.alterar_estado_item("Editar Tarefa", "disabled")
+            self.alterar_estado_item("Nova Tarefa", "disabled")
+            self.alterar_estado_item("Alterar Pastas", "disabled")
+            self.alterar_estado_item("Excluir Tarefa", "disabled")
 
         if editando_novos_dados:
-            self.view.controles['btn_gravar'].configure(state="normal")
+            self.view.controles['btn_gravar'].setEnabled(True)
         # 3. Atualiza os valores do Combobox
         self.atualizar_configuracao(nome_tarefa)
 
@@ -719,26 +719,29 @@ class Funcoes:
             self.view.controles['lbl_pastas'].setText(f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
         else:
             # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
-            valores_atuais = list(self.view.controles['cmb_selecao']['values'])
+            cmb_selecao = self.view.controles['cmb_selecao']
+            cmb_selecao.blockSignals(True)
+            #valores_atuais = list(self.view.controles['cmb_selecao']['values'])
+            valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
 
             # 2. Adiciona o novo item
             nova_tarefa = verificar_tarefas_existentes(valores_atuais)
 
             valores_atuais.append(nova_tarefa)
-            self.view.controles['cmb_selecao']['values'] = valores_atuais
-            self.view.controles['cmb_selecao'].current(len(valores_atuais) - 1)
-            self.view.controles['cmb_selecao'].config(state="disabled")
-            self.view.controles['txt_tarefa'].delete(0, "end")
-            self.view.controles['txt_tarefa'].insert(0, nova_tarefa)
-            self.view.controles['spin_hora'].set("17")
-            self.view.controles['spin_min'].set("00")
-            self.view.controles['var_diariamente'].set(True)
+            cmb_selecao.clear()
+            cmb_selecao.addItems(valores_atuais)
+            cmb_selecao.setCurrentIndex(0)
+            self.view.controles['txt_tarefa'].setText(nova_tarefa)
+            self.view.controles['spin_hora'].setValue(17)
+            self.view.controles['spin_min'].setValue(0)
+            self.view.controles['var_diariamente'].setChecked(True)
             self.atualizar_checkbox()
-            self.view.controles['var_desabilitar'].set(False)
-            self.view.controles['var_desligar'].set(False)
+            self.view.controles['var_desabilitar'].setChecked(False)
+            self.view.controles['var_desligar'].setChecked(False)
+            cmb_selecao.blockSignals(False)
 
     def atualizar_checkbox(self):
-        diario = self.view.controles['var_diariamente'].get()
+        diario = self.view.controles['var_diariamente'].isChecked()
 
         # Lista com as chaves dos dias para o código ficar limpo
         dias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
@@ -746,25 +749,26 @@ class Funcoes:
         if diario:
             for dia in dias:
                 # 1. Altera apenas o estado para desabilitado (SEM mexer no parâmetro variable)
-                self.view.controles[f'chk_{dia}'].configure(state="disabled")
+                self.view.controles[f'chk_{dia}'].setEnabled(False)
                 # 2. Atualiza o valor da variável original correspondente para True (marcado)
-                self.view.controles[f'var_{dia}'].set(True)
+                self.view.controles[f'var_{dia}'].setChecked(True)
         else:
             for dia in dias:
                 # 1. Altera o estado de volta para normal
-                self.view.controles[f'chk_{dia}'].configure(state="normal")
+                self.view.controles[f'chk_{dia}'].setEnabled(True)
                 # 2. Atualiza o valor da variável original correspondente para False (desmarcado)
-                self.view.controles[f'var_{dia}'].set(False)
+                self.view.controles[f'var_{dia}'].setChecked(False)
 
     def gravar_tarefa(self):
         # Novos dados
         global editando_dados, editando_novos_dados, atualizado_pastas, pasta_origem, pasta_destino, carregar_dados
+        cmb_selecao = self.view.controles['cmb_selecao']
         nome_tarefa = self.view.controles['txt_tarefa'].text().strip()
         if nome_tarefa == "inicial":
             QMessageBox.information(self.view, "Aviso", "Nome reservado e não pode ser usado!")
             pasta_origem = []
             pasta_destino = []
-            self.view.controles['cmb_selecao'].setCurrentIndex(0)
+            cmb_selecao.setCurrentIndex(0)
         else:
             hora = self.view.controles['spin_hora'].text()
             minuto = self.view.controles['spin_min'].text()
@@ -777,7 +781,7 @@ class Funcoes:
                         editando_novos_dados = False
 
                     # Captura os dados
-                    nome_tarefa = self.view.controles['cmb_selecao'].currentText()
+                    nome_tarefa = cmb_selecao.currentText()
                     tarefa = self.view.controles['txt_tarefa'].text().strip()
                     semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
                     diario = self.view.controles['var_diariamente'].isChecked()
@@ -799,8 +803,8 @@ class Funcoes:
                         editando_novos_dados = False
                         atualizado_pastas = False
                         QMessageBox.information(self.view, "Aviso", "Novos dados gravados com sucesso!")
-                        qtd_origem = len(self.view.controles['cmb_selecao']['values'])
-                        if qtd_origem > 1:
+                        qtd_origem = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
+                        if len(qtd_origem) > 1:
                             if self.view.controles['cmb_selecao'].currentText() == "inicial":
                                 dados_tinydb.apagar_dados_tarefa("inicial")
                                 carregar_dados = dados_tinydb.carregar_dados_tarefa()
@@ -833,29 +837,29 @@ class Funcoes:
         self.alterar_estado_item("Nova Tarefa", "normal")
 
         #self.carregar_cmb_selecao()
-        #self.atualizar_configuracao(nome_tarefa)
+        self.atualizar_configuracao(nome_tarefa)
 
     # --- Funções da janela Nova tarefa ---
     def adicionar_nova_tarefa(self):
         existe = self.verificar_pastas_existentes()
         if existe:
-            origem = self.view.controles['txt_origem'].get().strip()
+            origem = self.view.controles['txt_origem'].text().strip()
             pasta_origem.append(origem)
             # Extrai o nome da última pasta ("Development")
             #nome_pasta = os.path.basename(origem.rstrip("/")) Pegar o nome da pasta de origem
-            pasta_destino.append(self.view.controles['txt_destino'].get().strip())
+            pasta_destino.append(self.view.controles['txt_destino'].text().strip())
 
-            self.view.controles['txt_origem'].delete(0, "end")
-            self.view.controles['btn_salvar'].config(state="normal")
+            self.view.controles['txt_origem'].setText("")
+            self.view.controles['btn_salvar'].setEnabled(True)
 
     def gravar_pastas(self):
         global editando_novos_dados, atualizado_pastas
         if len(pasta_origem) != 0:
             atualizado_pastas = True
-            self.view.controles['txt_destino'].delete(0, "end")
+            self.view.controles['txt_destino'].setText("")
             editando_novos_dados = True
             QMessageBox.information(self.view, "Aviso", "Nova tarefa pronta para ser gravada")
-            self.view.controles['janela_nova_tarefa'].destroy()
+            self.view.close()
         else:
             QMessageBox.information(self.view, "Aviso", "Adicione ao menos uma pasta")
 
