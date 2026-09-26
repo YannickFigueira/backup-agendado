@@ -250,7 +250,7 @@ class Funcoes:
 
     # --- LÓGICA DA JANELA EXCLUIR TAREFA ---
     def _vincular_excluir_tarefa(self):
-        self.view.controles['btn_excluir'].config(command=lambda: self.excluir_tarefa())
+        self.view.controles['btn_excluir'].clicked.connect(lambda: self.excluir_tarefa())
 
     # --- LÓGICA DA JANELA DE LOGS ---
     def _vincular_janela_logs(self):
@@ -385,7 +385,7 @@ class Funcoes:
         #logica.centralizar_janela("janela_excluir_tarefa", self.view.controles['janela_configuracao'])
 
         logica.carregar_cmb_selecao()
-        logica.view.controles['janela_excluir_tarefa'].wait_window()
+        visual.exec()
         nome_tarefa = self.carregar_cmb_selecao()
         self.atualizar_configuracao(nome_tarefa)
         if nome_tarefa == "inicial":
@@ -957,6 +957,7 @@ class Funcoes:
     # --- Funções da Janela Excluir Tarefa ---
     def excluir_tarefa(self):
         global editando_excluir_dados, carregar_dados
+        cmb_selecao = self.view.controles['cmb_selecao']
         resposta = QMessageBox.question(
             self.view,
             "Atenção",
@@ -965,8 +966,8 @@ class Funcoes:
             QMessageBox.StandardButton.No  # Botão padrão pré-selecionado por segurança
         )
         if resposta == QMessageBox.StandardButton.Yes:
-            nome_tarefa = self.view.controles['cmb_selecao'].get()
-            qtd_tarefa = len(self.view.controles['cmb_selecao']['values'])
+            nome_tarefa = self.view.controles['cmb_selecao'].currentText()
+            qtd_tarefa = len([cmb_selecao.itemText(i) for i in range(cmb_selecao.count())])
             dados_tinydb.apagar_dados_tarefa(nome_tarefa)
 
             if qtd_tarefa == 1:
@@ -975,7 +976,7 @@ class Funcoes:
 
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
-            self.fechar_janelas("janela_excluir_tarefa")
+            self.view.close()
 
     def visitar_site(self=None):
         pagina = "https://github.com/YannickFigueira"
