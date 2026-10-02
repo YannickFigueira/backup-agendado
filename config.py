@@ -13,6 +13,7 @@ programa_dir = f"{home_dir}/.backup agendado"
 notas = f"{home_dir}/.backup agendado/notas"
 log_files = Path(f"{home_dir}/.backup agendado/logs")
 log_erros = Path(f"{home_dir}/.backup agendado/erros")
+temp = Path(f"{home_dir}/.backup agendado/temp")
 
 if not os.path.exists(programa_dir):
     os.mkdir(programa_dir)
@@ -22,6 +23,8 @@ if not os.path.exists(log_files):
     os.mkdir(log_files)
 if not os.path.exists(log_erros):
     os.mkdir(log_erros)
+if not os.path.exists(temp):
+    os.mkdir(temp)
 
 # Margens padrão para janelas e frames
 # Medidas

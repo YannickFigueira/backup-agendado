@@ -148,3 +148,13 @@ def atualizar_dados(campo, valor):
 
     # 4. Grava de volta o documento inteiro atualizado
     tabela_telegram.update(config_atual_telegram, Config.id_config == "global")
+
+def ler_dados_telegram(config_atual):
+    if not config_atual["database"]["telegrambot"] == "":
+        telegrambot = config_atual["database"]["telegrambot"]
+        chat_id = config_atual["database"]["chat_id"]
+    else:
+        telegrambot = ""
+        chat_id = ""
+
+    return telegrambot, chat_id

@@ -198,7 +198,7 @@ class Funcoes:
         menu_arquivo = self.view.controles['menu_arquivo']
         menu_arquivo.addAction("Configurações", lambda: self.abrir_janela_configuracoes(nome_tarefa))
         menu_arquivo.addAction("Logs", lambda: self.abrir_janela_logs_backup())
-        # Mudar comado para withdraw
+        menu_arquivo.addAction("Envio de logs", lambda: selecionar_arquivo_telegram(self.view))
         menu_arquivo.addAction("Sair", lambda: self.view.close())
 
         menu_ajuda = self.view.controles['menu_ajuda']

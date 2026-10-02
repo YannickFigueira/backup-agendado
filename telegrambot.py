@@ -14,12 +14,12 @@ def enviar_arquivo(token, chat_id, caminho):
     #FILE_PATH = caminho
 
     # Criar instância do bot
-    async def enviar_xmls():
+    async def enviar_relatorios():
         bot = Bot(token=token)
         with open(caminho, "rb") as f:
             await bot.send_document(chat_id=chat_id, document=f)
 
-    asyncio.run(enviar_xmls())
+    asyncio.run(enviar_relatorios())
     #metodos.log_mensagem("Ativar envio do arquivo")
 
 def enviar_mensagem(token, chat_id, mensagem):
