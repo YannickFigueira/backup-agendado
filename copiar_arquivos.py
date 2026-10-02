@@ -8,7 +8,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 import dados_tinydb
 from arquivo_log import gerar_arquivo_log, registrar_log
-from config import log_files
+from config import log_files, log_erros
 
 # Aumenta o buffer interno do Windows no shutil para 16MB
 shutil._WINDOWS_INTERNAL_BUFFER_SIZE = 16 * 1024 * 1024
@@ -180,9 +180,11 @@ class WorkerCopia(QThread):
                             try:
                                 executor.submit(self._copiar_arquivo, origem_arquivo, destino_arquivo, caminho_log)
                             except Exception as e:
-                                registrar_log(caminho_log, f"[ERRO] ao copiar: {e} {origem_arquivo}")
+                                caminho_log_erro = gerar_arquivo_log(log_erros)
+                                registrar_log(caminho_log_erro, f"[ERRO] ao copiar: {e} {origem_arquivo}")
                     except Exception as e:
-                        registrar_log(caminho_log, f"[ERRO] Criando pasta -> {e}")
+                        caminho_log_erro = gerar_arquivo_log(log_erros)
+                        registrar_log(caminho_log_erro, f"[ERRO] Criando pasta -> {e}")
 
         registrar_log(caminho_log, "Processo finalizado.\n" + ("_" * 40))
         self.sinal_concluido.emit(False, False)
@@ -205,7 +207,8 @@ class WorkerCopia(QThread):
         except shutil.SameFileError:
             pass
         except Exception as e:
-            registrar_log(caminho_log, f"[ERRO] Copiando -> {e} -> Origem {origem_arquivo} -> Destino {destino_arquivo}")
+            caminho_log_erro = gerar_arquivo_log(log_erros)
+            registrar_log(caminho_log_erro, f"[ERRO] Copiando -> {e} -> Origem {origem_arquivo} -> Destino {destino_arquivo}")
 
 class WorkerCalculoTamanho(QThread):
     sinal_tamanho = pyqtSignal(str)
