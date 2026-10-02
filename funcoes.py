@@ -393,8 +393,6 @@ class Funcoes:
     def abrir_janela_logs_backup(self):
         arquivos_log = ler_pasta_log()
         if len(arquivos_log) > 0:
-            print("Arquivos logs backup")
-            print(len(arquivos_log))
             # 1. Cria a parte visual
             visual = JanelaLogs(self.view.controles['janela_principal'])
 
@@ -447,7 +445,6 @@ class Funcoes:
             sleep(60)
 
     def carregar_cmb_selecao(self):
-        print("Carregar cmb_selecao")
         lista_nomes = list(carregar_dados['tarefas'].keys())
         cmb_selecao = self.view.controles['cmb_selecao']
         cmb_selecao.clear()

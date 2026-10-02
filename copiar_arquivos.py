@@ -236,10 +236,3 @@ def iniciar_calculo_tamanho(view, pastas_origem, liberar=""):
         view.controles['lbl_tamanho_exibir'].setText
     )
     worker_tamanho_global.start()
-
-class WorkerCopiaRelatorio(QThread):
-    def __init__(self):
-        super().__init__()
-
-    def run(self):
-        pass

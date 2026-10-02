@@ -131,10 +131,10 @@ def apagar_dados_tarefa(nome_tarefa):
         print(f"Erro: A tarefa '{nome_tarefa}' não foi encontrada para remoção.")
         return False
 
-# Dados Telegram
+# --- DADOS TELEGRAM ---#
 
 def carregar_dados_telegram():
-    config_atual_telegram = tabela_config.search(Config.id_config == "global")[0]
+    config_atual_telegram = tabela_telegram.search(Config.id_config == "global")[0]
 
     return config_atual_telegram
 
@@ -149,10 +149,10 @@ def atualizar_dados(campo, valor):
     # 4. Grava de volta o documento inteiro atualizado
     tabela_telegram.update(config_atual_telegram, Config.id_config == "global")
 
-def ler_dados_telegram(config_atual):
-    if not config_atual["database"]["telegrambot"] == "":
-        telegrambot = config_atual["database"]["telegrambot"]
-        chat_id = config_atual["database"]["chat_id"]
+def ler_dados_telegram(config_atual_telegram):
+    if not config_atual_telegram["database"]["telegrambot"] == "":
+        telegrambot = config_atual_telegram["database"]["telegrambot"]
+        chat_id = config_atual_telegram["database"]["chat_id"]
     else:
         telegrambot = ""
         chat_id = ""

@@ -4,6 +4,7 @@ from pathlib import Path
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import QMessageBox
 
+import config
 from arquivo_log import gerar_arquivo_log, registrar_log
 
 
@@ -23,7 +24,7 @@ class WorkerCompactador(QThread):
         self.destino_zip = destino_zip
 
     def run(self):
-        caminho_log = gerar_arquivo_log()
+        caminho_log = gerar_arquivo_log(config.log_erros)
         registrar_log(caminho_log, "Iniciado processo de compactação")
 
         pasta_origem = Path(self.origem)

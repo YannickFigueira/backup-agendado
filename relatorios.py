@@ -13,8 +13,8 @@ from compactar import WorkerCompactador
 
 class GerenciadorRelatorio:
     def __init__(self):
-        self.pastas_origem = config.log_files
-        self.pastas_destino = config.temp
+        self.pastas_origem = config.log_files if isinstance(config.log_files, list) else [config.log_files]
+        self.pastas_destino = config.temp if isinstance(config.temp, list) else [config.temp]
         self.worker_copia = None
         self.worker_compactador = None
         self.arquivo_controle = os.path.join(
@@ -41,7 +41,7 @@ class GerenciadorRelatorio:
         self.worker_compactador.start()
 
     def _ao_concluir_compactacao(self):
-        destino_zip = self.pastas_destino[0]
+        destino_zip = self.pastas_destino[0] / f"{self.pastas_origem[0].name}.zip"
         config_dados = dados_tinydb.carregar_dados_telegram()
         telegram, chat_id = dados_tinydb.ler_dados_telegram(config_dados)
 

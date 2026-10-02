@@ -4,6 +4,7 @@ import argparse
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 
+import analize_testes
 import config
 import backup_automatizado
 import relatorios  # Importa o módulo do relatório
