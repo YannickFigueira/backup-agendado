@@ -8,10 +8,12 @@ if not os.path.exists(dados_dir):
     os.makedirs(dados_dir)
 
 db = TinyDB('dados/backup_config.json')
+db_t = TinyDB('dados/backup_config_telegram.json')
 tabela_config = db.table('configuracoes')
+tabela_telegram = db_t.table('telegram')
 Config = Query()
 
-# 1. Estrutura inicial padrão (Criada apenas na primeira vez que o script roda)
+# Base das configurações
 dados_backup = {
     "id_config": "global",
     "tarefas": {
@@ -24,9 +26,21 @@ dados_backup = {
     }
 }
 
+# Base do telegram
+dados_telegram = {
+    "id_config": "global",
+    "database": {
+        "telegrambot": "",
+        "chat_id": ""
+    }
+}
+
 # Inicializa o banco se estiver vazio
 if not tabela_config.all():
     tabela_config.insert(dados_backup)
+
+if not tabela_telegram.all():
+    tabela_telegram.insert(dados_telegram)
 
 # --- FUNÇÃO PRINCIPAL DE MANIPULAÇÃO ---
 # --- GRAVAR OS DADOS ---
@@ -116,3 +130,21 @@ def apagar_dados_tarefa(nome_tarefa):
     else:
         print(f"Erro: A tarefa '{nome_tarefa}' não foi encontrada para remoção.")
         return False
+
+# Dados Telegram
+
+def carregar_dados_telegram():
+    config_atual_telegram = tabela_config.search(Config.id_config == "global")[0]
+
+    return config_atual_telegram
+
+def atualizar_dados(campo, valor):
+    # 1. Busca o estado mais recente do banco de dados
+    config_atual_telegram = tabela_telegram.search(Config.id_config == "global")[0]
+
+
+    # 3. Altera cirurgicamente apenas o campo desejado na memória
+    config_atual_telegram['database'][campo] = valor
+
+    # 4. Grava de volta o documento inteiro atualizado
+    tabela_telegram.update(config_atual_telegram, Config.id_config == "global")

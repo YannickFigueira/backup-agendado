@@ -8,7 +8,6 @@ import platform
 import re
 import sys
 import threading
-import time
 import tkinter as tk
 from time import sleep
 
@@ -121,6 +120,46 @@ def obter_caminho_recurso(caminho_relativo: str) -> str:
     # 3. Fallback: Desenvolvimento local (caminho relativo à pasta do script)
     base_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_dir, caminho_relativo)
+
+def selecionar_arquivo_telegram(view):
+    # Define o caminho padrão expandindo o $USER atual do sistema de forma segura
+    # No Linux/Mac, isso aponta para /home/usuario/Documentos (ou Documentos com "D" maiúsculo)
+    diretorio_padrao = os.path.expanduser("~/Documentos")
+
+    # Se a pasta "Documentos" em português não existir, tenta em inglês ou usa a Home
+    if not os.path.exists(diretorio_padrao):
+        diretorio_padrao = os.path.expanduser("~/Documents")
+    if not os.path.exists(diretorio_padrao):
+        diretorio_padrao = os.path.expanduser("~")
+
+    # Abre o seletor focado em arquivos .txt
+    arquivo, _ = QFileDialog.getOpenFileName(
+        view,  # janela/widget pai (pode ser 'self' ou 'None')
+        "Selecione o arquivo do Telegram",
+        diretorio_padrao,
+        "Arquivos de Texto (*.txt);;Todos os arquivos (*.*)"
+    )
+
+    if arquivo:  # Se o usuário não cancelar
+        token, chat_id = carregar_texto(view, arquivo)
+        return token, chat_id
+    else:
+        token, chat_id = carregar_texto(view, "")
+        return token, chat_id
+
+def carregar_texto(view, arquivo):
+    if os.path.isfile(arquivo):
+        with open(arquivo, "r", encoding="utf-8") as f:
+            texto = f.read()
+            paragrafo = texto.split("\n")
+            telegram_token = paragrafo[0].split("=")
+            telegram_chat_id = paragrafo[1].split("=")
+            dados_tinydb.atualizar_dados('telegrambot', telegram_token[1])
+            dados_tinydb.atualizar_dados('chat_id', telegram_chat_id[1])
+    else:
+        QMessageBox.critical(view, "Erro", f"Arquivo não encontrado: {arquivo}")
+
+    return telegram_token[1], telegram_chat_id[1]
 
 class Funcoes:
     """Classe da função principal"""
