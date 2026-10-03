@@ -113,7 +113,7 @@ def carregar_dados_tarefa():
     return config_atual
 
 # --- REMOVER OS DADOS ---
-def apagar_dados_tarefa(nome_tarefa):
+def apagar_dados_tarefa(nome_tarefa, parent=None):
     # 1. Busca o estado mais recente do banco
     config_atual = tabela_config.search(Config.id_config == "global")[0]
 
@@ -125,7 +125,7 @@ def apagar_dados_tarefa(nome_tarefa):
         # 4. Salva o documento atualizado de volta no TinyDB
         tabela_config.update(config_atual, Config.id_config == "global")
         if nome_tarefa != "inicial":
-            QMessageBox.information(None,"Aviso", "Tarefa removida com sucesso!")
+            QMessageBox.information(parent,"Aviso", "Tarefa removida com sucesso!")
         return True
     else:
         print(f"Erro: A tarefa '{nome_tarefa}' não foi encontrada para remoção.")

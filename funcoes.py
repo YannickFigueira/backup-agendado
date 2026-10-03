@@ -303,17 +303,19 @@ class Funcoes:
             nome_tarefa = logica.carregar_cmb_selecao()
             editando_novos_dados = False
             logica.atualizar_configuracao(nome_tarefa)
+        logica.view.controles['cmb_selecao'].blockSignals(True)
 
-        print(nome_tarefa)
         if not nome_tarefa == "inicial":
             visual.exec()
         else:
             visual.show()
-            logica.abrir_janela_nova_tarefa(nome_tarefa)
-            logica.gravar_tarefa()
+            nome_tarefa = logica.abrir_janela_nova_tarefa(nome_tarefa)
+
+        logica.view.controles['cmb_selecao'].blockSignals(False)
+        logica.atualizar_configuracao(nome_tarefa)
 
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
-        nome_tarefa = self.carregar_cmb_selecao()
+        self.carregar_cmb_selecao()
         if nome_tarefa == "inicial":
             QMessageBox.information(self.view, "Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
             self.fechar_programa()
@@ -323,7 +325,6 @@ class Funcoes:
             self.view.controles['lbl_hora_execucao'].setText(f"{hora}:{minuto}")
 
     def abrir_janela_nova_tarefa(self, nome_tarefa):
-        self.view.controles['cmb_selecao'].blockSignals(True)
         global pasta_origem, pasta_destino, nova_tarefa_aberta
         nova_tarefa_aberta = True
         # 1. Cria a parte visual
@@ -337,18 +338,13 @@ class Funcoes:
             pasta_destino = []
 
         visual.exec()
-        nova_tarefa_aberta = False
+
         if atualizado_pastas:
             self.alterar_estado_item("Editar Tarefa", "disabled")
             self.alterar_estado_item("Nova Tarefa", "disabled")
             self.alterar_estado_item("Alterar Pastas", "disabled")
             self.alterar_estado_item("Excluir Tarefa", "disabled")
 
-        if editando_novos_dados:
-            self.view.controles['btn_gravar'].setEnabled(True)
-        # 3. Atualiza os valores do Combobox
-        self.atualizar_configuracao(nome_tarefa)
-        self.view.controles['cmb_selecao'].blockSignals(False)
 
     def abrir_janela_alterar_pastas(self):
         global alterar_pasta_aberta, origem_pasta, destino_pasta
@@ -595,12 +591,15 @@ class Funcoes:
         QMessageBox.information(self.view, "Aviso", "Edição habilitada")
 
     def atualizar_configuracao(self, nome_tarefa):
-        global editando_excluir_dados
+        global editando_excluir_dados, editando_novos_dados
         if not editando_novos_dados or editando_dados:
             if editando_excluir_dados:
                 editando_excluir_dados = False
             else:
                 nome_tarefa = self.view.controles['cmb_selecao'].currentText()
+
+            if nome_tarefa == '':
+                return
             self.view.controles['txt_tarefa'].setText(nome_tarefa)
             hora_atualizada = carregar_dados['tarefas'][nome_tarefa]['hora']
             minuto_atualizado = carregar_dados['tarefas'][nome_tarefa]['minuto']
@@ -635,9 +634,9 @@ class Funcoes:
                 destino += f"   {pastas_destino[i]}\n"
             self.view.controles['lbl_pastas'].setText(f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
         else:
+            editando_novos_dados = False
             # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
             cmb_selecao = self.view.controles['cmb_selecao']
-            #valores_atuais = list(self.view.controles['cmb_selecao']['values'])
             valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
 
             # 2. Adiciona o novo item
@@ -674,12 +673,16 @@ class Funcoes:
                 # 2. Atualiza o valor da variável original correspondente para False (desmarcado)
                 self.view.controles[f'var_{dia}'].setChecked(False)
 
-    def gravar_tarefa(self):
+    def gravar_tarefa(self, tarefa_nova=None):
         self.view.controles['cmb_selecao'].blockSignals(True)
         # Novos dados
         global editando_dados, editando_novos_dados, atualizado_pastas, pasta_origem, pasta_destino, carregar_dados
         cmb_selecao = self.view.controles['cmb_selecao']
-        nome_tarefa = self.view.controles['txt_tarefa'].text().strip()
+        if not editando_novos_dados:
+            nome_tarefa = self.view.controles['txt_tarefa'].text().strip()
+        else:
+            nome_tarefa = tarefa_nova
+
         if nome_tarefa == "inicial":
             QMessageBox.information(self.view, "Aviso", "Nome reservado e não pode ser usado!")
             pasta_origem = []
@@ -715,6 +718,9 @@ class Funcoes:
 
                     if editando_novos_dados:
                         # Verificar dados
+                        print(nome_tarefa)
+                        print(tarefa)
+                        tarefa = tarefa_nova
                         dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
                         dados_tinydb.gravar_nova_tarefa(tarefa, dados)
                         editando_novos_dados = False
@@ -887,7 +893,7 @@ class Funcoes:
         if resposta == QMessageBox.StandardButton.Yes:
             nome_tarefa = self.view.controles['cmb_selecao'].currentText()
             qtd_tarefa = cmb_selecao.count()
-            dados_tinydb.apagar_dados_tarefa(nome_tarefa)
+            dados_tinydb.apagar_dados_tarefa(nome_tarefa, self.view)
 
             if qtd_tarefa == 1:
                     dados = ["17", "00", [], [], [True, True, True, True, True, True, True, True], False, False]
