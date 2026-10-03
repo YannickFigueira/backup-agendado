@@ -14,9 +14,11 @@ from time import sleep
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import QMessageBox, QPushButton, QFileDialog, QApplication
+from PyQt6.sip import isdeleted
 
 import verificarversao, dados_tinydb, copiar_arquivos, config
 from arquivo_log import abrir_logs, ler_pasta_log, gerar_arquivo_log, registrar_log
+from atualizacao import migrar_configuracoes_ini
 from janela_alterar_pastas import JanelaAlterarPastas
 from janela_config import JanelaConfiguracao
 from janela_logs import JanelaLogs
@@ -185,21 +187,28 @@ class Funcoes:
 
     # --- LÓGICA DA JANELA PRINCIPAL ---
     def _vincular_janela_principal(self):
+        global carregar_dados
         # --- Inicialização dos dados ---
         nome_tarefa = self.carregar_cmb_selecao()
         self.atualizar_informacoes(nome_tarefa)
         if not nome_tarefa == "inicial":
             self.verificar_tarefa_executando()
+        else:
+            if not os.path.exists(r"C:\Copia\Config"):
+                migrar_configuracoes_ini()
+                carregar_dados = dados_tinydb.carregar_dados_tarefa()
+                self.view.controles['cmb_selecao'].clear()
+                nome_tarefa = self.carregar_cmb_selecao()
 
         self.criar_bandeja()
 
         # --- Controle do Menu ---
         # --- Menu Arquivo ---
         menu_arquivo = self.view.controles['menu_arquivo']
-        menu_arquivo.addAction("Configurações", lambda: self.abrir_janela_configuracoes(nome_tarefa))
+        menu_arquivo.addAction("Configurações", lambda: self.abrir_janela_configuracoes(self.view.controles['cmb_selecao'].currentText()))
         menu_arquivo.addAction("Logs", lambda: self.abrir_janela_logs_backup())
         menu_arquivo.addAction("Envio de logs", lambda: selecionar_arquivo_telegram(self.view))
-        menu_arquivo.addAction("Sair", lambda: self.view.close())
+        menu_arquivo.addAction("Sair", lambda: self.view.hide())
 
         menu_ajuda = self.view.controles['menu_ajuda']
         menu_ajuda.addAction("Verificar atualização", lambda: verificarversao.consultar_lancamento(config.REPO, config.VERSION, self.view))
@@ -272,8 +281,7 @@ class Funcoes:
 
     # --- Execução das janelas ---
     def abrir_janela_configuracoes(self, nome_tarefa):
-        global editando_novos_dados, configuracao_aberta, carregar_dados
-        configuracao_aberta = True
+        global editando_novos_dados, carregar_dados
         # 1. Cria a parte visual
         visual = JanelaConfiguracao(self.view)
 
@@ -284,7 +292,6 @@ class Funcoes:
         if nome_tarefa == "inicial":
             logica.desabiliatar_menus_configuracao()
         else:
-            log_mensagem("Reabilitar")
             logica.alterar_estado_item("Editar Tarefa", "normal")
             logica.alterar_estado_item("Alterar Pastas", "normal")
             logica.alterar_estado_item("Excluir Tarefa", "normal")
@@ -297,7 +304,13 @@ class Funcoes:
             editando_novos_dados = False
             logica.atualizar_configuracao(nome_tarefa)
 
-        visual.exec()
+        print(nome_tarefa)
+        if not nome_tarefa == "inicial":
+            visual.exec()
+        else:
+            visual.show()
+            logica.abrir_janela_nova_tarefa(nome_tarefa)
+            logica.gravar_tarefa()
 
         carregar_dados = dados_tinydb.carregar_dados_tarefa()
         nome_tarefa = self.carregar_cmb_selecao()
@@ -305,12 +318,12 @@ class Funcoes:
             QMessageBox.information(self.view, "Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
             self.fechar_programa()
         else:
-            configuracao_aberta = False
             hora = carregar_dados['tarefas'][nome_tarefa]['hora']
             minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
             self.view.controles['lbl_hora_execucao'].setText(f"{hora}:{minuto}")
 
     def abrir_janela_nova_tarefa(self, nome_tarefa):
+        self.view.controles['cmb_selecao'].blockSignals(True)
         global pasta_origem, pasta_destino, nova_tarefa_aberta
         nova_tarefa_aberta = True
         # 1. Cria a parte visual
@@ -335,6 +348,7 @@ class Funcoes:
             self.view.controles['btn_gravar'].setEnabled(True)
         # 3. Atualiza os valores do Combobox
         self.atualizar_configuracao(nome_tarefa)
+        self.view.controles['cmb_selecao'].blockSignals(False)
 
     def abrir_janela_alterar_pastas(self):
         global alterar_pasta_aberta, origem_pasta, destino_pasta
@@ -374,6 +388,7 @@ class Funcoes:
         alterar_pasta_aberta = False
 
     def abrir_janela_excluir_tarefa(self):
+        self.view.controles['cmb_selecao'].blockSignals(True)
         global excluir_tarefa_aberta
         excluir_tarefa_aberta = True
         # 1. Cria a parte vsual
@@ -389,6 +404,7 @@ class Funcoes:
         if nome_tarefa == "inicial":
             self.desabiliatar_menus_configuracao()
         excluir_tarefa_aberta = False
+        self.view.controles['cmb_selecao'].blockSignals(False)
 
     def abrir_janela_logs_backup(self):
         arquivos_log = ler_pasta_log()
@@ -417,8 +433,9 @@ class Funcoes:
             try:
                 # 1. Verifica se o widget ainda existe na interface
                 lbl_multi_execucao = self.view.controles.get('lbl_multi_execucao')
-                if not lbl_multi_execucao or not lbl_multi_execucao.winfo_exists():
-                    break  # Encerra o loop da thread se a janela foi destruída
+                # Verifica se a referência existe E se o objeto C++ do Qt ainda está vivo
+                if not lbl_multi_execucao or isdeleted(lbl_multi_execucao):
+                    break  # O widget/janela foi fechado
 
                 carregar_dados = dados_tinydb.carregar_dados_tarefa()
                 lista_nomes = list(carregar_dados['tarefas'].keys())
@@ -435,7 +452,8 @@ class Funcoes:
                 try:
                     self.view.controles['lbl_multi_execucao'].setText(lista_executando)
                 except (tk.TclError, RuntimeError):
-                    break
+                    erros_log = gerar_arquivo_log(config.log_erros)
+                    registrar_log(erros_log, f"[ERRO] Monitoramento das tarefas -> {tk.TclError}")
 
             except Exception as e:
                 erros_log = gerar_arquivo_log(config.log_erros)
@@ -529,43 +547,27 @@ class Funcoes:
     def criar_bandeja(self):
         caminho_imagem = obter_caminho_recurso("imagens/backup.png")
 
-        if sistema == "Linux":
-            from PyQt6.QtGui import QIcon
-            from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+        from PyQt6.QtGui import QIcon
+        from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-            # 1. Recupera ou cria a instância da aplicação PyQt
-            self.qt_app = QApplication.instance() or QApplication(sys.argv)
-            self.qt_app.setQuitOnLastWindowClosed(False)
+        # 1. Recupera ou garante a instância da aplicação PyQt
+        self.qt_app = QApplication.instance() or QApplication(sys.argv)
+        self.qt_app.setQuitOnLastWindowClosed(False)
 
-            # 2. Instancia o ícone de bandeja do PyQt
-            self.qt_tray = QSystemTrayIcon(QIcon(caminho_imagem))
-            menu = QMenu()
+        # 2. Instancia o ícone de bandeja nativo do PyQt (funciona em Windows e Linux)
+        self.qt_tray = QSystemTrayIcon(QIcon(caminho_imagem))
+        menu = QMenu()
 
-            acao1 = menu.addAction("Janela Principal")
-            acao1.triggered.connect(self.restaurar_janela)
+        acao1 = menu.addAction("Janela Principal")
+        acao1.triggered.connect(self.restaurar_janela)
 
-            acao2 = menu.addAction("Sair")
-            acao2.triggered.connect(self.fechar_programa)
+        acao2 = menu.addAction("Sair")
+        acao2.triggered.connect(self.fechar_programa)
 
-            self.qt_tray.setContextMenu(menu)
-            self.qt_tray.show()
+        self.qt_tray.setContextMenu(menu)
+        self.qt_tray.show()
 
-            return self.qt_tray
-        else:
-            # Mantém pystray para Windows
-            from PIL import Image
-            from pystray import Icon, Menu, MenuItem
-
-            image = Image.open(caminho_imagem)
-            menu = Menu(
-                MenuItem("Janela Principal", self.restaurar_janela),
-                MenuItem("Sair", self.fechar_programa),
-            )
-            self.icon_tray = Icon(
-                "BackupAgendado", image, config.NOME_PROGRAMA, menu
-            )
-            self.icon_tray.run_detached()
-            return self.icon_tray
+        return self.qt_tray
 
     # --- Funções da Janela Principal ---
     def atualizar_informacoes(self, nome_tarefa):
@@ -582,9 +584,9 @@ class Funcoes:
 
     # --- Funções da Janela Configurações ---
     def desabiliatar_menus_configuracao(self):
-        self.view.controles['menu_btn'].entryconfig("Editar Tarefa", state="disabled")
-        self.view.controles['menu_btn'].entryconfig("Alterar Pastas", state="disabled")
-        self.view.controles['menu_btn'].entryconfig("Excluir Tarefa", state="disabled")
+        self.alterar_estado_item("Editar Tarefa", "disabled")
+        self.alterar_estado_item("Alterar Pastas", "disabled")
+        self.alterar_estado_item("Excluir Tarefa", "disabled")
 
     def habilitar_edicao(self):
         global editando_dados
@@ -635,7 +637,6 @@ class Funcoes:
         else:
             # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
             cmb_selecao = self.view.controles['cmb_selecao']
-            cmb_selecao.blockSignals(True)
             #valores_atuais = list(self.view.controles['cmb_selecao']['values'])
             valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
 
@@ -653,7 +654,6 @@ class Funcoes:
             self.atualizar_checkbox()
             self.view.controles['var_desabilitar'].setChecked(False)
             self.view.controles['var_desligar'].setChecked(False)
-            cmb_selecao.blockSignals(False)
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].isChecked()
@@ -675,6 +675,7 @@ class Funcoes:
                 self.view.controles[f'var_{dia}'].setChecked(False)
 
     def gravar_tarefa(self):
+        self.view.controles['cmb_selecao'].blockSignals(True)
         # Novos dados
         global editando_dados, editando_novos_dados, atualizado_pastas, pasta_origem, pasta_destino, carregar_dados
         cmb_selecao = self.view.controles['cmb_selecao']
@@ -700,6 +701,7 @@ class Funcoes:
                     tarefa = self.view.controles['txt_tarefa'].text().strip()
                     semanas = ['diariamente', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
                     diario = self.view.controles['var_diariamente'].isChecked()
+
                     index = 0
                     execusao = []
                     if diario:
@@ -751,6 +753,8 @@ class Funcoes:
         self.view.controles['btn_gravar'].setEnabled(False)
         self.alterar_estado_item("Nova Tarefa", "normal")
 
+        nome_tarefa = self.carregar_cmb_selecao()
+        self.view.controles['cmb_selecao'].blockSignals(False)
         self.atualizar_configuracao(nome_tarefa)
 
     # --- Funções da janela Nova tarefa ---
@@ -870,6 +874,7 @@ class Funcoes:
 
     # --- Funções da Janela Excluir Tarefa ---
     def excluir_tarefa(self):
+        self.view.controles['cmb_selecao'].blockSignals(True)
         global editando_excluir_dados, carregar_dados
         cmb_selecao = self.view.controles['cmb_selecao']
         resposta = QMessageBox.question(
@@ -890,6 +895,7 @@ class Funcoes:
 
             carregar_dados = dados_tinydb.carregar_dados_tarefa()
             editando_excluir_dados = True
+            self.view.controles['cmb_selecao'].blockSignals(False)
             self.view.close()
 
     def visitar_site(self=None):

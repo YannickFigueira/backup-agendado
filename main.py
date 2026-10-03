@@ -1,16 +1,29 @@
+import faulthandler
 import sys
 import os
 import argparse
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 
-import analize_testes
 import config
 import backup_automatizado
 import relatorios  # Importa o módulo do relatório
 from arquivo_log import gerar_arquivo_log
 from funcoes import Funcoes, registrar_log
 from janela_principal import JanelaPrincipal
+
+# Ativa o faulthandler para capturar erros fatais do C++
+faulthandler.enable()
+
+def capturar_excecoes(exctype, value, tb):
+    """Exibe o traceback completo no terminal antes do crash."""
+    print("=== EXCEÇÃO NÃO TRATADA DETECTADA ===", file=sys.stderr)
+    import traceback
+    traceback.print_exception(exctype, value, tb)
+    sys.exit(1)
+
+# Redireciona o tratamento de exceções do Python/Qt
+sys.excepthook = capturar_excecoes
 
 # TRATAMENTO DE ÍCONE PARA WINDOWS
 if sys.platform.startswith("win"):
