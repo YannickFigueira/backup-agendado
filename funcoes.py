@@ -194,7 +194,8 @@ class Funcoes:
         if not nome_tarefa == "inicial":
             self.verificar_tarefa_executando()
         else:
-            if not os.path.exists(r"C:\Copia\Config"):
+            if os.path.exists(r"C:\Copia\Config"):
+                return
                 migrar_configuracoes_ini()
                 carregar_dados = dados_tinydb.carregar_dados_tarefa()
                 self.view.controles['cmb_selecao'].clear()
@@ -242,7 +243,7 @@ class Funcoes:
         self.view.controles['menu_btn'].addAction("Editar Tarefa",
                                                       lambda: self.habilitar_edicao())
         self.view.controles['menu_btn'].addAction("Nova Tarefa",
-                                                       lambda: self.abrir_janela_nova_tarefa(nome_tarefa))
+                                                       lambda: self.abrir_janela_nova_tarefa())
         self.view.controles['menu_btn'].addAction("Alterar Pastas",
                                                       lambda: self.abrir_janela_alterar_pastas())
         self.view.controles['menu_btn'].addAction("Excluir Tarefa",
@@ -253,7 +254,6 @@ class Funcoes:
         self.view.controles['btn_selecionar_origem'].clicked.connect(lambda: self.selecionar_pastas('txt_origem'))
         self.view.controles['btn_selecionar_destino'].clicked.connect(lambda: self.selecionar_pastas('txt_destino'))
         self.view.controles['btn_adicionar'].clicked.connect(lambda: self.adicionar_nova_tarefa())
-        self.view.controles['btn_salvar'].clicked.connect(lambda: self.gravar_pastas())
 
     # --- LÓGICA DA JANELA ALTERAR PASTAS ---
     def _vincular_alterar_pastas(self):
@@ -309,7 +309,7 @@ class Funcoes:
             visual.exec()
         else:
             visual.show()
-            nome_tarefa = logica.abrir_janela_nova_tarefa(nome_tarefa)
+            nome_tarefa = logica.abrir_janela_nova_tarefa()
 
         logica.view.controles['cmb_selecao'].blockSignals(False)
         logica.atualizar_configuracao(nome_tarefa)
@@ -319,20 +319,15 @@ class Funcoes:
         if nome_tarefa == "inicial":
             QMessageBox.information(self.view, "Aviso", "Nenhuma tarefa foi criada e o programa será encerrado!")
             self.fechar_programa()
-        else:
-            hora = carregar_dados['tarefas'][nome_tarefa]['hora']
-            minuto = carregar_dados['tarefas'][nome_tarefa]['minuto']
-            self.view.controles['lbl_hora_execucao'].setText(f"{hora}:{minuto}")
 
-    def abrir_janela_nova_tarefa(self, nome_tarefa):
-        global pasta_origem, pasta_destino, nova_tarefa_aberta
-        nova_tarefa_aberta = True
+    def abrir_janela_nova_tarefa(self):
+        global pasta_origem, pasta_destino
         # 1. Cria a parte visual
         visual = JanelaNovaTarefa(self.view.controles['janela_configuracao'])
 
         # 2. Cria a lógica e passa a visão para ela controlar
         logica = Funcoes(visual)
-        #logica.centralizar_janela("janela_nova_tarefa", self.view.controles['janela_configuracao'])
+        nome_tarefa = logica.view.controles['btn_salvar'].clicked.connect(lambda: logica.gravar_pastas(self))
         if len(pasta_origem) > 0:
             pasta_origem = []
             pasta_destino = []
@@ -345,6 +340,7 @@ class Funcoes:
             self.alterar_estado_item("Alterar Pastas", "disabled")
             self.alterar_estado_item("Excluir Tarefa", "disabled")
 
+        return nome_tarefa
 
     def abrir_janela_alterar_pastas(self):
         global alterar_pasta_aberta, origem_pasta, destino_pasta
@@ -633,26 +629,6 @@ class Funcoes:
                 origem += f"   {pastas_origem[i]}\n"
                 destino += f"   {pastas_destino[i]}\n"
             self.view.controles['lbl_pastas'].setText(f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
-        else:
-            editando_novos_dados = False
-            # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
-            cmb_selecao = self.view.controles['cmb_selecao']
-            valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
-
-            # 2. Adiciona o novo item
-            nova_tarefa = verificar_tarefas_existentes(valores_atuais)
-
-            valores_atuais.append(nova_tarefa)
-            cmb_selecao.clear()
-            cmb_selecao.addItems(valores_atuais)
-            cmb_selecao.setCurrentIndex(0)
-            self.view.controles['txt_tarefa'].setText(nova_tarefa)
-            self.view.controles['spin_hora'].setValue(17)
-            self.view.controles['spin_min'].setValue(0)
-            self.view.controles['var_diariamente'].setChecked(True)
-            self.atualizar_checkbox()
-            self.view.controles['var_desabilitar'].setChecked(False)
-            self.view.controles['var_desligar'].setChecked(False)
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].isChecked()
@@ -718,8 +694,6 @@ class Funcoes:
 
                     if editando_novos_dados:
                         # Verificar dados
-                        print(nome_tarefa)
-                        print(tarefa)
                         tarefa = tarefa_nova
                         dados = [hora, minuto, pasta_origem, pasta_destino, execusao, desligar, desabilitar]
                         dados_tinydb.gravar_nova_tarefa(tarefa, dados)
@@ -774,7 +748,7 @@ class Funcoes:
             self.view.controles['txt_origem'].setText("")
             self.view.controles['btn_salvar'].setEnabled(True)
 
-    def gravar_pastas(self):
+    def gravar_pastas(self, parent):
         global editando_novos_dados, atualizado_pastas
         if len(pasta_origem) != 0:
             atualizado_pastas = True
@@ -784,6 +758,31 @@ class Funcoes:
             self.view.close()
         else:
             QMessageBox.information(self.view, "Aviso", "Adicione ao menos uma pasta")
+
+        # 1. Obtém a lista de valores atuais (converte para lista para poder alterar)
+        cmb_selecao = parent.view.controles['cmb_selecao']
+        valores_atuais = [cmb_selecao.itemText(i) for i in range(cmb_selecao.count())]
+
+        # 2. Adiciona o novo item
+        nova_tarefa = verificar_tarefas_existentes(valores_atuais)
+
+        valores_atuais.append(nova_tarefa)
+        cmb_selecao.clear()
+        cmb_selecao.addItems(valores_atuais)
+        cmb_selecao.setCurrentIndex(0)
+
+        parent.view.controles['txt_tarefa'].setText(nova_tarefa)
+        parent.view.controles['spin_hora'].setValue(17)
+        parent.view.controles['spin_min'].setValue(0)
+        parent.view.controles['var_diariamente'].setChecked(True)
+        parent.atualizar_checkbox()
+        parent.view.controles['var_desabilitar'].setChecked(False)
+        parent.view.controles['var_desligar'].setChecked(False)
+
+        if parent is not None:
+            parent.gravar_tarefa(nova_tarefa)
+
+        return nova_tarefa
 
     # --- Funcões da Janela Alterar Pastas ---
     def carregar_pastas(self):

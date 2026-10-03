@@ -27,7 +27,7 @@ class GerenciadorRelatorio:
         self.worker_copia = WorkerCopia(
             pastas_origem=self.pastas_origem,
             pastas_destino=self.pastas_destino,
-            modo_automatizado=True
+            modo_automatizado=False
         )
         self.worker_copia.finished.connect(self._ao_concluir_copia)
         self.worker_copia.start()
