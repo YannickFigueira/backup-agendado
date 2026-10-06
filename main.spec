@@ -3,12 +3,12 @@ import sys
 import os
 import re
 
-# Adiciona o diretório atual (onde está o main.spec e o config.py) ao sys.path
-BASE_DIR = os.path.dirname(os.path.abspath(__name__))
+# SPECPATH é a variável global nativa do PyInstaller que aponta para o diretório do .spec
+BASE_DIR = SPECPATH
+
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-# Agora o import do config funcionará sem erro!
 import config
 
 # --- GERADOR DINÂMICO DE RECURSO DE VERSÃO (APENAS PARA WINDOWS) ---
@@ -56,9 +56,58 @@ if sys.platform.startswith("win"):
   ]
 )
 """
-    with open(os.path.join(BASE_DIR, "version.txt"), "w", encoding="utf-8") as f:
+    version_file_path = os.path.join(BASE_DIR, "version.txt")
+    with open(version_file_path, "w", encoding="utf-8") as f:
         f.write(conteudo_version_txt)
 
-    version_file = os.path.join(BASE_DIR, "version.txt")
+    version_file = version_file_path
 
-# Restante do seu .spec (Analysis, PYZ, EXE, etc.)...
+# --- CONFIGURAÇÃO DE COMPILAÇÃO DO PYINSTALLER ---
+
+block_cipher = None
+
+hidden_imports = [
+    'PyQt6',
+    'PyQt6.QtWidgets',
+    'PyQt6.QtGui',
+    'PyQt6.QtCore',
+    'pystray',
+]
+
+a = Analysis(
+    ['main.py'],
+    pathex=[BASE_DIR],
+    binaries=[],
+    datas=[
+        ('imagens', 'imagens'),
+    ],
+    hiddenimports=hidden_imports,
+    hookspath=[],
+    runtime_hooks=[],
+    excludes=[
+        'gi',
+        'gi.repository',
+    ],
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name='backup-agendado',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    icon='imagens/backup.png',
+    version=version_file,
+)
