@@ -21,5 +21,4 @@ Este projeto nasceu da necessidade de automatizar a cópia de segurança de arqu
 
 * **Linguagem:** Python 3.12
 * **Interface Gráfica:** PyQt6
-* **Agendamento:** Biblioteca `schedule` ou `apscheduler`
 * **Manipulação de Arquivos:** `shutil` e `os`
