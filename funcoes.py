@@ -195,10 +195,13 @@ class Funcoes:
             self.verificar_tarefa_executando()
         else:
             if os.path.exists(r"C:\Copia\Config"):
-                migrar_configuracoes_ini()
-                carregar_dados = dados_tinydb.carregar_dados_tarefa()
-                self.view.controles['cmb_selecao'].clear()
-                nome_tarefa = self.carregar_cmb_selecao()
+                migrado = migrar_configuracoes_ini()
+                if migrado:
+                    print("Migrado")
+                    carregar_dados = dados_tinydb.carregar_dados_tarefa()
+                    self.view.controles['cmb_selecao'].clear()
+                    nome_tarefa = self.carregar_cmb_selecao()
+                    self.atualizar_informacoes(nome_tarefa)
 
         self.criar_bandeja()
 

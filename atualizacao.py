@@ -1,5 +1,8 @@
 import os
 import configparser
+
+from PyQt6.QtWidgets import QMessageBox
+
 import dados_tinydb
 
 
@@ -122,9 +125,5 @@ def migrar_configuracoes_ini(diretorio_config=r"C:\Copia\Config"):
     if mapeamento_tarefas and "inicial" in dados_tinydb.carregar_dados_tarefa()['tarefas']:
         dados_tinydb.apagar_dados_tarefa("inicial")
 
-    print("\nMigração concluída com sucesso!")
+    QMessageBox.information(None, "Aviso", "Migração concluída com sucesso!")
     return True
-
-
-#if __name__ == "__main__":
-#    migrar_configuracoes_ini()
