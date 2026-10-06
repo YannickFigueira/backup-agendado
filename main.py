@@ -12,8 +12,13 @@ from arquivo_log import gerar_arquivo_log
 from funcoes import Funcoes, registrar_log
 from janela_principal import JanelaPrincipal
 
-# Ativa o faulthandler para capturar erros fatais do C++
-faulthandler.enable()
+# Garante um destino para o faulthandler mesmo sem terminal
+if sys.stderr is None:
+    # Em modo GUI sem console, salva o log de crash fatal em um arquivo
+    config.log_erros = open("crash_faulthandler.log", "a", encoding="utf-8")
+    faulthandler.enable(file=config.log_erros)
+else:
+    faulthandler.enable()
 
 def capturar_excecoes(exctype, value, tb):
     """Exibe o traceback completo no terminal antes do crash."""
