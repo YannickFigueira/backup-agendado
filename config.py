@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 # Versão e repositório
-VERSION = "v4.0.0"
+VERSION = "v4.0.1"
 REPO= "backup-agendado"
 NOME_PROGRAMA = "Backup Agendado"
 
