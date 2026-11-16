@@ -627,10 +627,11 @@ class Funcoes:
             pastas_destino = carregar_dados['tarefas'][nome_tarefa]['pastas_destino']
             origem = ""
             destino = ""
+            lbl_pastas = self.view.controles['lbl_pastas']
             for i in range(len(pastas_origem)):
                 origem += f"   {pastas_origem[i]}\n"
                 destino += f"   {pastas_destino[i]}\n"
-            self.view.controles['lbl_pastas'].setText(f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
+            lbl_pastas.setText(f"Pastas de origem{8*"-"}\n{origem}\nPastas de destino{8*"-"}\n{destino}")
 
     def atualizar_checkbox(self):
         diario = self.view.controles['var_diariamente'].isChecked()

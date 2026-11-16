@@ -48,8 +48,7 @@ class JanelaConfiguracao(QDialog):
         tema.atualizar_tema(self)
 
         # Trava o tamanho de acordo com os componentes organizados
-        self.adjustSize()
-        self.setFixedSize(self.sizeHint())
+        layout_geral.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
 
     def _criar_barra_menu(self):
         self.menu_btn = self.barra_titulo.adicionar_submenu("Opções")
